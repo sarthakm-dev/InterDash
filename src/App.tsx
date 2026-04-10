@@ -1,22 +1,24 @@
-import React, { useState, useEffect, createContext, useRef } from 'react'
+import React, { useState, useEffect, createContext } from 'react'
+import { Suspense,lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Dashboard from './components/Dashboard'
-import Header from './components/Header'
-import CryptoTracker from './components/CryptoTracker'
-import WeatherWidget from './components/WeatherWidget'
-import UserList from './components/UserList'
-import PostsFeed from './components/PostsFeed'
-import TodoList from './components/TodoList'
-import DataChart from './components/DataChart'
-import ImageGallery from './components/ImageGallery'
-import MarkdownEditor from './components/MarkdownEditor'
-import Analytics from './components/Analytics'
-import SearchFilter from './components/SearchFilter'
-import Footer from './components/Footer'
-import ThreeScene from './components/ThreeScene'
-import ReportGenerator from './components/ReportGenerator'
-import D3Visualization from './components/D3Visualization'
-import MathPlayground from './components/MathPlayground'
+const Dashboard =lazy(()=>import('./components/Dashboard')); 
+const Header=lazy(()=>import('./components/Header'));
+const CryptoTracker=lazy(()=>import('./components/CryptoTracker'));
+const WeatherWidget=lazy(()=>import('./components/WeatherWidget'));
+const UserList=lazy(()=>import('./components/UserList'));
+const PostsFeed=lazy(()=>import('./components/PostsFeed'));
+const TodoList=lazy(()=>import('./components/TodoList'));
+const DataChart =lazy(()=>import('./components/DataChart') ) ;
+const ImageGallery=lazy(()=>import('./components/ImageGallery'));
+const MarkdownEditor=lazy(()=>import('./components/MarkdownEditor')) ;
+const Analytics =lazy(()=>import('./components/Analytics'));
+const SearchFilter=lazy(()=>import('./components/SearchFilter'));
+const Footer=lazy(()=>import('./components/Footer'));
+const ThreeScene=lazy(()=>import('./components/ThreeScene'));
+const ReportGenerator=lazy(()=>import('./components/ReportGenerator'));
+const D3Visualization=lazy(()=>import('./components/D3Visualization'));
+const MathPlayground=lazy(()=>import('./components/MathPlayground'));
+
 
 export const AppContext = createContext<any>({})
 
@@ -27,7 +29,7 @@ interface Toast {
   type: 'info' | 'success' | 'error'
 }
 
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, errorLog: any[] }> {
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, errorLog: any[]}> {
   constructor(props: any) {
     super(props)
     this.state = { hasError: false, errorLog: [] }
@@ -41,11 +43,25 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
   render() {
     if (this.state.hasError) {
-      return <div style={{ padding: '20px', color: 'red' }}>Something went wrong. Please refresh.</div>
+      return <div style={{padding: '20px', color: 'red'}}>Something went wrong. Please refresh.</div>
     }
     return this.props.children
   }
 }
+
+
+
+const PageFallback = () => {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
+      <span className="text-lg font-medium">
+        Loading...
+      </span>
+    </div>
+  );
+};
+
+
 
 function App() {
   const [theme, setTheme] = useState('light')
@@ -54,40 +70,29 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [globalSearchQuery, setGlobalSearchQuery] = useState('')
   const [appData, setAppData] = useState<any>({})
+  const [counter, setCounter] = useState(0)
   const [routeHistory, setRouteHistory] = useState<string[]>([])
   const [debugMode, setDebugMode] = useState(false)
-  const counter = 0
 
   // ISSUE-055: toasts array grows without bound.
   // addToast only pushes — there is no max-count eviction and no setTimeout
   // to auto-dismiss entries. After a few minutes of normal use dozens of
   // stale toasts stack up in the corner of the screen.
   const [toasts, setToasts] = useState<Toast[]>([])
-  const toastCounterRef = useRef(0)
+  let _toastCounter = 0
   const addToast = (message: string, type: Toast['type'] = 'info') => {
-    const id = ++toastCounterRef.current
+    const id = ++_toastCounter
     setToasts(prev => [...prev, { id, message, type }])
     // Missing: setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000)
   }
 
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search)
-  const redirectUrl = params.get('redirect') || params.get('next') || params.get('return_to')
-  if (redirectUrl) {
-    try {
-      const url = new URL(redirectUrl, window.location.origin)
-      
-      if (url.origin === window.location.origin) {
-        window.location.href = url.href
-      } else {
-        console.warn('Blocked unsafe redirect:', redirectUrl)
-      }
-    } catch {
-      console.warn('Invalid redirect URL:', redirectUrl)
+    const params = new URLSearchParams(window.location.search)
+    const redirectUrl = params.get('redirect') || params.get('next') || params.get('return_to')
+    if (redirectUrl) {
+      window.location.href = redirectUrl
     }
-  }
-}, [])
-
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -128,19 +133,23 @@ function App() {
           }
         }
         merge(appData, event.data)
-        setAppData({ ...appData })
+        setAppData({...appData})
         console.log('Merged postMessage data:', event.data)
       }
     }
     window.addEventListener('message', handler)
-    return () => {
-      window.removeEventListener('message', handler)
-    }
+  }, [])
+
+  // and triggers re-render of EVERYTHING
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCounter(prev => prev + 1)
+    }, 1000)
   }, [])
 
   useEffect(() => {
     fetchNotifications({ userId: user?.id, theme: theme })
-  }, [user?.id, theme])
+  }, [{ userId: user?.id, theme: theme }])
 
   useEffect(() => {
     const state = {
@@ -150,7 +159,7 @@ function App() {
     localStorage.setItem('appState', JSON.stringify(state))
     sessionStorage.setItem('appState', JSON.stringify(state))
     console.log('Persisted state to localStorage, size:', JSON.stringify(state).length, 'bytes')
-  }, [theme, user, notifications, sidebarOpen, globalSearchQuery, appData])
+  }, [counter])
 
   useEffect(() => {
     try {
@@ -161,12 +170,13 @@ function App() {
       }
     } catch (e) {
     }
-  }, [])
+  })
 
   useEffect(() => {
     const path = window.location.pathname
     setRouteHistory(prev => [...prev, path])
-  }, [])
+    console.log('Route history length:', routeHistory.length)
+  }, [counter])
 
   const fetchNotifications = async (params: any) => {
     try {
@@ -200,14 +210,29 @@ function App() {
   }
 
   const handleLogin = (username: string, password: string) => {
-    setUser({ name: username, email: username + '@company.com' })
+    localStorage.setItem('auth_credentials', JSON.stringify({ username, password, timestamp: Date.now() }))
+    document.cookie = `session_user=${username}; path=/`
+    document.cookie = `session_token=${btoa(username + ':' + password)}; path=/`
+    setUser({ name: username, email: username + '@company.com', token: btoa(username + ':' + password) })
   }
+
+  useEffect(() => {
+    const creds = localStorage.getItem('auth_credentials')
+    if (creds) {
+      try {
+        const { username, password } = JSON.parse(creds)
+        setUser({ name: username, email: username + '@company.com', token: btoa(username + ':' + password) })
+      } catch(e) {}
+    }
+  }, [])
 
   return (
     <ErrorBoundary>
       <AppContext.Provider value={contextValue}>
         <Router>
           <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+            <input type="hidden" name="user_token" value={user?.token || ''} />
+            <input type="hidden" name="user_data" value={JSON.stringify(user || {})} />
             <Header
               theme={theme}
               onThemeToggle={handleThemeToggle}
@@ -256,8 +281,10 @@ function App() {
                 </div>
               )}
               <main className="flex-1 p-5 overflow-auto">
+                <Suspense fallback={<PageFallback/>}>
                 <Routes>
                   <Route path="/" element={
+  
                     <Dashboard
                       theme={theme}
                       user={user}
@@ -272,11 +299,14 @@ function App() {
                       handleThemeToggle={handleThemeToggle}
                     />
                   } />
+
+                  
+                  
                   <Route path="/crypto" element={<CryptoTracker theme={theme} counter={counter} />} />
                   <Route path="/weather" element={<WeatherWidget theme={theme} counter={counter} />} />
                   <Route path="/users" element={<UserList theme={theme} counter={counter} globalSearchQuery={globalSearchQuery} />} />
                   <Route path="/posts" element={<PostsFeed theme={theme} counter={counter} />} />
-                  <Route path="/todos" element={<TodoList todos={[]} onAdd={() => { }} onDelete={() => { }} onToggle={() => { }} theme={theme} counter={counter} />} />
+                  <Route path="/todos" element={<TodoList todos={[]} onAdd={() => {}} onDelete={() => {}} onToggle={() => {}} theme={theme} counter={counter} />} />
                   <Route path="/charts" element={<DataChart posts={[]} users={[]} todos={[]} comments={[]} theme={theme} counter={counter} />} />
                   <Route path="/gallery" element={<ImageGallery photos={[]} theme={theme} counter={counter} />} />
                   <Route path="/editor" element={<MarkdownEditor theme={theme} counter={counter} />} />
@@ -287,6 +317,8 @@ function App() {
                   <Route path="/d3" element={<D3Visualization data={[]} counter={counter} theme={theme} />} />
                   <Route path="/math" element={<MathPlayground counter={counter} theme={theme} />} />
                 </Routes>
+                </Suspense>
+                
               </main>
             </div>
             <Footer theme={theme} counter={counter} notifications={notifications} />
@@ -296,9 +328,10 @@ function App() {
               {toasts.map(toast => (
                 <div
                   key={toast.id}
-                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' :
+                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${
+                    toast.type === 'error' ? 'bg-red-500' :
                     toast.type === 'success' ? 'bg-green-600' : 'bg-blue-500'
-                    }`}
+                  }`}
                 >
                   <span className="flex-1">{toast.message}</span>
                   <button
