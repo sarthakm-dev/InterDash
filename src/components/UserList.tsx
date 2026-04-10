@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import ReactDOM from 'react-dom'
 import _ from 'lodash'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Users, Mail, Building, Phone, Globe, Info } from 'lucide-react'
@@ -27,6 +28,8 @@ const UserList = ({ theme, counter, users, posts, globalSearchQuery, onUserClick
   // bottom or right edge of the viewport. Users near the end of the list see
   // a clipped or fully off-screen tooltip they cannot read.
   const [hoveredTooltipIndex, setHoveredTooltipIndex] = useState<number | null>(null)
+  const [tooltip,setTooltip]=useState({top: 0, left: 0});
+  
 
   console.log('UserList render', counter)
 
@@ -100,23 +103,31 @@ const UserList = ({ theme, counter, users, posts, globalSearchQuery, onUserClick
                     are invisible to the user. */}
                 <div
                   className="relative shrink-0"
-                  onMouseEnter={() => setHoveredTooltipIndex(index)}
+                  onMouseEnter={(e) => {const rect=e.currentTarget.getBoundingClientRect()
+                  let top=rect.bottom + window.scrollY + 6
+                  if(rect.bottom+100> window.innerHeight){
+                    top=rect.top+window.scrollY-6
+                  }
+                  const left=rect.left+window.scrollX+rect.width/2
+                  setTooltip({top,left})
+                  setHoveredTooltipIndex(index)}}
                   onMouseLeave={() => setHoveredTooltipIndex(null)}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                  {hoveredTooltipIndex === index && (
+                  {hoveredTooltipIndex === index && ReactDOM.createPortal (
                     // BUG ISSUE-057: Always positioned below-left; no viewport
                     // boundary check — clipped off-screen for bottom-edge rows.
                     <div
                       className="absolute z-50 bg-popover border rounded-md shadow-lg p-2 text-xs w-[200px]"
-                      style={{ top: '100%', left: 0, marginTop: '4px' }}
+                      style={{ top: tooltip.top, left: tooltip.left, marginTop: '4px' }}
                     >
                       <p className="font-medium mb-1">{user.name}</p>
                       <p>{user.address?.street}, {user.address?.suite}</p>
                       <p>{user.address?.city}, {user.address?.zipcode}</p>
                       <p className="mt-1 text-muted-foreground">lat {user.address?.geo?.lat}, lng {user.address?.geo?.lng}</p>
-                    </div>
+                    </div>,
+                    document.getElementById('tooltip-root')!
                   )}
                 </div>
               </div>
