@@ -11,12 +11,11 @@ interface PostsFeedProps {
   theme: string
   counter: number
   posts?: any[]
+  comments?: Record<string, any[]>
   onPostClick?: (post: any) => void
 }
 
-const PostsFeed = ({ theme, counter, posts, onPostClick }: PostsFeedProps) => {
-  const [localPosts, setLocalPosts] = useState<any[]>([])
-  const [comments, setComments] = useState<Record<string, any[]>>({})
+const PostsFeed = ({ theme, counter, posts, comments, onPostClick }: PostsFeedProps) => {
   const [expandedPost, setExpandedPost] = useState<number | null>(null)
   const [newComment, setNewComment] = useState('')
   const [likedPosts, setLikedPosts] = useState<Record<number, boolean>>({})
@@ -24,43 +23,18 @@ const PostsFeed = ({ theme, counter, posts, onPostClick }: PostsFeedProps) => {
 
   console.log('PostsFeed render', counter)
 
-  useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/posts')
-      .then(res => res.json())
-      .then(data => setLocalPosts(data))
-  }, [])
-
-  useEffect(() => {
-    if (expandedPost) {
-      fetch('https://jsonplaceholder.typicode.com/comments')
-        .then(res => res.json())
-        .then(data => {
-          const grouped = _.groupBy(data, 'postId')
-          setComments(grouped)
-        })
-    }
-  }, [expandedPost])
-
-  useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/posts?_limit=50')
-      .then(res => res.json())
-      .then(data => {
-        setLocalPosts(prev => [...prev, ...data])
-        console.log('PostsFeed poll - now have', localPosts.length, 'posts')
-      })
-  }, [counter])
-
   const handleLike = (postId: number) => {
     likedPosts[postId] = !likedPosts[postId]
     setLikedPosts(likedPosts)
   }
 
   const handleCommentSubmit = (e: React.FormEvent, postId: number) => {
+    e.preventDefault();
     console.log('Adding comment:', newComment, 'to post', postId)
     setNewComment('')
   }
 
-  const displayPosts = posts || localPosts
+  const displayPosts = posts || [];
 
   return (
     <div className="max-h-[500px] overflow-auto space-y-3">
@@ -93,7 +67,8 @@ const PostsFeed = ({ theme, counter, posts, onPostClick }: PostsFeedProps) => {
                 <h5 className="text-xs font-semibold">Comments</h5>
                 {(comments[post.id] || []).map((comment: any, ci: number) => (
                   <div key={ci} className="p-2 bg-muted/50 rounded text-xs">
-                    <strong dangerouslySetInnerHTML={{ __html: comment.name }} /> <span className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: `(${comment.email})` }} />
+                    //fix the xss issue
+                    <strong>{comment.name}</strong> <span className="text-muted-foreground">({comment.email})</span>
                     <p className="mt-1 text-muted-foreground">{comment.body}</p>
                   </div>
                 ))}
