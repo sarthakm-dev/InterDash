@@ -14,7 +14,7 @@ const D3Visualization = ({ data, counter, theme }: D3VisualizationProps) => {
   const simulationRef = useRef<d3.Simulation<any, undefined> | null>(null)
   const [dimensions] = useState({ width: 600, height: 300 })
 
-  console.log('D3Visualization render', counter)
+
 
   const graph = useMemo(() => {
     const nodes = data.slice(0, 50).map((d: any, i: number) => ({
@@ -65,7 +65,7 @@ const D3Visualization = ({ data, counter, theme }: D3VisualizationProps) => {
     node.append('title').text((d: any) => d.name)
 
     const simulation = d3.forceSimulation(graph.nodes as any)
-      .force('link', d3.forceLink(graph.links).id((d: any) => d.id).distance(50))
+      .force('link', d3.forceLink(graph.links as any).id((d: any) => d.id).distance(50))
       .force('charge', d3.forceManyBody().strength(-100))
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(15))
