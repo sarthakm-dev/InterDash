@@ -153,11 +153,11 @@ function App() {
     }
   })
 
+  //remove counter from useEffect deps
   useEffect(() => {
-    const path = window.location.pathname
-    setRouteHistory(prev => [...prev, path])
-    console.log('Route history length:', routeHistory.length)
-  }, [counter])
+    const path = window.location.pathname;
+    setRouteHistory((prev) => [...prev, path]);
+  }, []);
 
   const fetchNotifications = async (params: any) => {
     try {
