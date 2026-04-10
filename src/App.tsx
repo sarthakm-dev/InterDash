@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext } from 'react';
+import React, { useState, useEffect, createContext, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import Header from './components/Header';
@@ -59,18 +59,18 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [appData, setAppData] = useState<any>({});
-  const [counter, setCounter] = useState(0);
   const [routeHistory, setRouteHistory] = useState<string[]>([]);
   const [debugMode, setDebugMode] = useState(false);
+  const counter = 0;
 
   // ISSUE-055: toasts array grows without bound.
   // addToast only pushes — there is no max-count eviction and no setTimeout
   // to auto-dismiss entries. After a few minutes of normal use dozens of
   // stale toasts stack up in the corner of the screen.
   const [toasts, setToasts] = useState<Toast[]>([]);
-  let _toastCounter = 0;
+  const toastCounterRef = useRef(0);
   const addToast = (message: string, type: Toast['type'] = 'info') => {
-    const id = ++_toastCounter;
+    const id = ++toastCounterRef.current;
     setToasts((prev) => [...prev, { id, message, type }]);
     // Missing: setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000)
   };
@@ -79,7 +79,17 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const redirectUrl = params.get('redirect') || params.get('next') || params.get('return_to');
     if (redirectUrl) {
-      window.location.href = redirectUrl;
+      try {
+        const url = new URL(redirectUrl, window.location.origin);
+
+        if (url.origin === window.location.origin) {
+          window.location.href = url.href;
+        } else {
+          console.warn('Blocked unsafe redirect:', redirectUrl);
+        }
+      } catch {
+        console.warn('Invalid redirect URL:', redirectUrl);
+      }
     }
   }, []);
 
@@ -135,16 +145,9 @@ function App() {
     return () => window.removeEventListener('message', handler);
   }, [appData]);
 
-  // and triggers re-render of EVERYTHING
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCounter((prev) => prev + 1);
-    }, 1000);
-  }, []);
-
   useEffect(() => {
     fetchNotifications({ userId: user?.id, theme: theme });
-  }, [{ userId: user?.id, theme: theme }]);
+  }, [user?.id, theme]);
 
   useEffect(() => {
     const state = {
@@ -160,7 +163,7 @@ function App() {
     localStorage.setItem('appState', JSON.stringify(state));
     sessionStorage.setItem('appState', JSON.stringify(state));
     console.log('Persisted state to localStorage, size:', JSON.stringify(state).length, 'bytes');
-  }, [counter]);
+  }, [theme, user, notifications, sidebarOpen, globalSearchQuery, appData]);
 
   useEffect(() => {
     try {
@@ -170,13 +173,12 @@ function App() {
         console.log('Restored state from localStorage:', parsed.counter);
       }
     } catch (e) {}
-  });
+  }, []);
 
   useEffect(() => {
     const path = window.location.pathname;
     setRouteHistory((prev) => [...prev, path]);
-    console.log('Route history length:', routeHistory.length);
-  }, [counter]);
+  }, []);
 
   const fetchNotifications = async (params: any) => {
     try {
@@ -217,32 +219,8 @@ function App() {
   };
 
   const handleLogin = (username: string, password: string) => {
-    localStorage.setItem(
-      'auth_credentials',
-      JSON.stringify({ username, password, timestamp: Date.now() }),
-    );
-    document.cookie = `session_user=${username}; path=/`;
-    document.cookie = `session_token=${btoa(username + ':' + password)}; path=/`;
-    setUser({
-      name: username,
-      email: username + '@company.com',
-      token: btoa(username + ':' + password),
-    });
+    setUser({ name: username, email: username + '@company.com' });
   };
-
-  useEffect(() => {
-    const creds = localStorage.getItem('auth_credentials');
-    if (creds) {
-      try {
-        const { username, password } = JSON.parse(creds);
-        setUser({
-          name: username,
-          email: username + '@company.com',
-          token: btoa(username + ':' + password),
-        });
-      } catch (e) {}
-    }
-  }, []);
 
   return (
     <ErrorBoundary>
@@ -251,8 +229,6 @@ function App() {
           <div
             className={`min-h-screen ${theme === 'dark' ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-900'}`}
           >
-            <input type="hidden" name="user_token" value={user?.token || ''} />
-            <input type="hidden" name="user_data" value={JSON.stringify(user || {})} />
             <Header
               theme={theme}
               onThemeToggle={handleThemeToggle}
