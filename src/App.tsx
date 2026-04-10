@@ -41,6 +41,7 @@ class ErrorBoundary extends React.Component<
   }
   componentDidCatch(error: any, errorInfo: any) {
     console.log('Error caught:', error);
+    
     //fix the error boundary in componenet did catch
     this.setState((prev) => {
       return {
@@ -157,6 +158,7 @@ function App() {
     const interval = setInterval(() => {
       setCounter((prev) => prev + 1);
     }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
