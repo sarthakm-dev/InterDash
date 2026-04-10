@@ -1,6 +1,6 @@
-import React, { Suspense } from 'react';
-import groupBy from 'lodash/groupBy';
-
+import React, { memo, useCallback, useMemo } from 'react';
+import _ from 'lodash';
+import CryptoTracker from '../CryptoTracker';
 import WeatherWidget from '../WeatherWidget';
 import UserList from '../UserList';
 import PostsFeed from '../PostsFeed';
@@ -25,7 +25,6 @@ import { DashboardOverviewTabProps } from '../../lib/types';
 
 const DashboardOverviewTab = ({
   theme,
-  counter,
   globalSearchQuery,
   lastUpdated,
   cryptoData,
@@ -48,6 +47,34 @@ const DashboardOverviewTab = ({
   onProfileSave,
   getSortedAndFilteredPosts,
 }: DashboardOverviewTabProps) => {
+  const groupedComments = useMemo(() => _.groupBy(comments, 'postId'), [comments]);
+  const searchableData = useMemo(() => [...posts, ...users, ...todos], [posts, users, todos]);
+  const quickStatsTabs = useMemo(
+    () => [
+      {
+        label: 'Posts',
+        content: <p className="text-sm text-muted-foreground">Total posts: {posts.length}</p>,
+      },
+      {
+        label: 'Users',
+        content: <p className="text-sm text-muted-foreground">Total users: {users.length}</p>,
+      },
+      {
+        label: 'Todos',
+        content: <p className="text-sm text-muted-foreground">Total todos: {todos.length}</p>,
+      },
+      {
+        label: 'Comments',
+        content: <p className="text-sm text-muted-foreground">Total comments: {comments.length}</p>,
+      },
+    ],
+    [posts.length, users.length, todos.length, comments.length],
+  );
+
+  const handleFilterResults = useCallback((result: unknown[]) => {
+    console.log('filtered:', result.length);
+  }, []);
+
   return (
     <Suspense
       fallback={
@@ -98,64 +125,70 @@ const DashboardOverviewTab = ({
           onToggle={onToggleTodo}
           onEdit={onEditTodo}
           theme={theme}
-          counter={counter}
+          data={cryptoData}
+          onSelect={onSelectItem}
         />
-
-        <DataChart
+        <WeatherWidget theme={theme} data={weatherData} onCityClick={onOpenModal} />
+        <UserList
+          theme={theme}
+          users={users}
           posts={posts}
           users={users}
           todos={todos}
           comments={comments}
           theme={theme}
-          counter={counter}
+          posts={getSortedAndFilteredPosts()}
+          comments={groupedComments}
+          onPostClick={onOpenModal}
         />
 
-        <ThreeScene counter={counter} theme={theme} />
-        <D3Visualization data={posts} counter={counter} theme={theme} />
-        <MathPlayground counter={counter} theme={theme} />
-        <ReportGenerator posts={posts} users={users} counter={counter} theme={theme} />
-        <ImageGallery photos={photos} theme={theme} counter={counter} />
-        <MarkdownEditor theme={theme} counter={counter} />
+      <TodoList
+        todos={todos}
+        onAdd={onAddTodo}
+        onDelete={onDeleteTodo}
+        onToggle={onToggleTodo}
+        onEdit={onEditTodo}
+        theme={theme}
+      />
 
-        <Analytics
-          posts={posts}
-          users={users}
-          todos={todos}
-          comments={comments}
-          albums={albums}
-          photos={photos}
-          theme={theme}
-          counter={counter}
-        />
+      <DataChart
+        posts={posts}
+        users={users}
+        todos={todos}
+        comments={comments}
+        theme={theme}
+      />
 
-        <SearchFilter data={[...posts, ...users, ...todos]} theme={theme} counter={counter} />
+      <ThreeScene theme={theme} />
+      <D3Visualization data={posts} theme={theme} />
+      <MathPlayground theme={theme} />
+      <ReportGenerator posts={posts} users={users} theme={theme} />
+      <ImageGallery photos={photos} theme={theme} />
+      <MarkdownEditor theme={theme} />
 
-        <DraggableList />
-        <VirtualizedFeed items={posts} counter={counter} />
+      <Analytics
+        posts={posts}
+        users={users}
+        todos={todos}
+        comments={comments}
+        albums={albums}
+        photos={photos}
+        theme={theme}
+      />
 
-        <CustomTabPanel
-          title="Quick Stats"
-          tabs={[
-            {
-              label: 'Posts',
-              content: <p className="text-sm text-muted-foreground">Total posts: {posts.length}</p>,
-            },
-            {
-              label: 'Users',
-              content: <p className="text-sm text-muted-foreground">Total users: {users.length}</p>,
-            },
-            {
-              label: 'Todos',
-              content: <p className="text-sm text-muted-foreground">Total todos: {todos.length}</p>,
-            },
-            {
-              label: 'Comments',
-              content: (
-                <p className="text-sm text-muted-foreground">Total comments: {comments.length}</p>
-              ),
-            },
-          ]}
-        />
+      <SearchFilter
+        data={searchableData}
+        onFilter={handleFilterResults}
+        theme={theme}
+      />
+
+      <DraggableList />
+      <VirtualizedFeed items={posts} />
+
+      <CustomTabPanel
+        title="Quick Stats"
+        tabs={quickStatsTabs}
+      />
 
         <DashboardProfileForm
           formData={formData}
@@ -168,4 +201,4 @@ const DashboardOverviewTab = ({
   );
 };
 
-export default DashboardOverviewTab;
+export default memo(DashboardOverviewTab);

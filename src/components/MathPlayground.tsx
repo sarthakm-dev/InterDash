@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import * as mathjs from 'mathjs';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Calculator } from 'lucide-react';
+import React, { memo, useState, useEffect } from 'react'
+import * as mathjs from 'mathjs'
+import { faker } from '@faker-js/faker'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Badge } from './ui/badge'
+import { Calculator } from 'lucide-react'
+
 
 interface MathPlaygroundProps {
-  counter: number;
-  theme: string;
+  theme: string
 }
 
-const MathPlayground = ({ counter, theme }: MathPlaygroundProps) => {
-  const [matrix, setMatrix] = useState<number[][]>([]);
+const MathPlayground = ({ theme }: MathPlaygroundProps) => {
+  const [results, setResults] = useState<any>({})
+  const [matrix, setMatrix] = useState<number[][]>([])
 
-  const results = useMemo(() => {
-    const r: any = {};
-
-    const size = 50;
+  useEffect(() => {
+    const r: any = {}
 
     const A = Array.from({ length: size }, () =>
       Array.from({ length: size }, () => Math.random() * 20 - 10),
@@ -48,11 +48,9 @@ const MathPlayground = ({ counter, theme }: MathPlaygroundProps) => {
     }
     r.fib = fib;
 
-    // Store small matrix preview
-    setMatrix(A.slice(0, 5).map((row) => row.slice(0, 5)));
-
-    return r;
-  }, []);
+    setResults(r)
+    setMatrix(A.slice(0, 5).map(row => row.slice(0, 5)))
+  }, [])
 
   return (
     <Card>
@@ -131,11 +129,10 @@ const MathPlayground = ({ counter, theme }: MathPlaygroundProps) => {
             ))}
           </div>
         </div>
-
-        <p className="text-xs text-muted-foreground mt-2">Render count: {counter}</p>
+        <p className="text-xs text-muted-foreground mt-2">Recalculated on load</p>
       </CardContent>
     </Card>
   );
 };
 
-export default MathPlayground;
+export default memo(MathPlayground)

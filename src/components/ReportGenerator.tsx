@@ -1,3 +1,29 @@
+<<<<<<< fix/bug-18-use-react-memo
+import React, { memo, useState, useEffect } from 'react'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { faker } from '@faker-js/faker'
+import { saveAs } from 'file-saver'
+import * as XLSX from 'xlsx'
+import Papa from 'papaparse'
+import JSZip from 'jszip'
+import CryptoJS from 'crypto-js'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Download, FileSpreadsheet, FileText, Archive, Lock } from 'lucide-react'
+
+
+interface ReportGeneratorProps {
+  posts: any[]
+  users: any[]
+  theme: string
+}
+
+const ReportGenerator = ({ posts, users, theme }: ReportGeneratorProps) => {
+  const [generating, setGenerating] = useState(false)
+  const [fakeData, setFakeData] = useState<any[]>([])
+  const [encryptedData, setEncryptedData] = useState('')
+=======
 import React, { useState, useEffect } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { faker } from '@faker-js/faker';
@@ -22,6 +48,7 @@ const ReportGenerator = ({ posts, users, counter, theme }: ReportGeneratorProps)
   const [generating, setGenerating] = useState(false);
   const [fakeData, setFakeData] = useState<any[]>([]);
   const [encryptedData, setEncryptedData] = useState('');
+>>>>>>> dev
 
   useEffect(() => {
     const data = Array.from({ length: 10000 }, () => ({
@@ -44,10 +71,17 @@ const ReportGenerator = ({ posts, users, counter, theme }: ReportGeneratorProps)
 
     const encrypted = CryptoJS.AES.encrypt(
       JSON.stringify(data.slice(0, 100)),
+<<<<<<< fix/bug-18-use-react-memo
+      'secret-key-123'
+    ).toString()
+    setEncryptedData(encrypted)
+  }, [])
+=======
       'secret-key-123',
     ).toString();
     setEncryptedData(encrypted);
   }, [counter]);
+>>>>>>> dev
 
   const generatePDF = async () => {
     setGenerating(true);
@@ -230,4 +264,8 @@ const ReportGenerator = ({ posts, users, counter, theme }: ReportGeneratorProps)
   );
 };
 
+<<<<<<< fix/bug-18-use-react-memo
+export default memo(ReportGenerator)
+=======
 export default ReportGenerator;
+>>>>>>> dev
