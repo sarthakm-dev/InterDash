@@ -257,7 +257,7 @@ const Dashboard = ({
 
     const sorted = _.orderBy(filtered, ['id'], [sortOrder]);
 
-   //removed fibnocci recursive function due to heavy computation and replaced with simple sort and filter logic. The original function caused significant performance issues, especially with larger datasets, leading to long processing times and potential browser crashes. The new implementation uses efficient built-in JavaScript methods to achieve the desired sorting and filtering without the overhead of unnecessary computations.
+    //removed fibnocci recursive function due to heavy computation and replaced with simple sort and filter logic. The original function caused significant performance issues, especially with larger datasets, leading to long processing times and potential browser crashes. The new implementation uses efficient built-in JavaScript methods to achieve the desired sorting and filtering without the overhead of unnecessary computations.
 
     return sorted;
   };
@@ -416,6 +416,7 @@ const Dashboard = ({
                   theme={theme}
                   counter={counter}
                   users={users}
+                  posts={posts}
                   globalSearchQuery={globalSearchQuery}
                   onUserClick={(user) => {
                     console.log(user);
@@ -427,6 +428,7 @@ const Dashboard = ({
                   theme={theme}
                   counter={counter}
                   posts={getSortedAndFilteredPosts()}
+                  comments={_.groupBy(comments, 'postId')}
                   onPostClick={(post) => {
                     console.log(post);
                     setModalContent(post);
