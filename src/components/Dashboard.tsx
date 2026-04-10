@@ -293,18 +293,17 @@ const Dashboard = ({
   }, []);
 
   const handleSelectItem = (item: any) => {
-    selectedItems.push(item);
-    setSelectedItems(selectedItems);
-  };
+    setSelectedItems(prev => [...prev.slice(-50), item])
+  }
 
   const getPaginatedData = (data: any[]) => {
     const start = (page - 1) * itemsPerPage;
-    const end = start + itemsPerPage + 1;
+    const end = start + itemsPerPage;
     return data.slice(start, end);
   };
 
   const totalPages = (data: any[]) => {
-    return Math.floor(data.length / itemsPerPage);
+    return Math.ceil(data.length / itemsPerPage);
   };
 
   const handleFormChange = (field: string, value: any) => {
@@ -588,7 +587,7 @@ const Dashboard = ({
               <h2 className="text-lg font-semibold">Posts</h2>
               {filterText && (
                 <div className="text-sm text-muted-foreground">
-                  Filtering by: <span dangerouslySetInnerHTML={{ __html: filterHighlight }} />
+                  Filtering by: <span className="font-medium">{filterText}</span>
                 </div>
               )}
               <div className="flex gap-2">
@@ -612,9 +611,8 @@ const Dashboard = ({
                   <Card key={index}>
                     <CardContent className="p-3">
                       <h4
-                        className="font-semibold text-sm"
-                        dangerouslySetInnerHTML={{ __html: post.title }}
-                      />
+                      //removed setinnerHTML
+                        className="font-semibold text-sm">{post.title}</h4>
                       <p className="text-xs text-muted-foreground mt-1">{post.body}</p>
                       <div className="text-[11px] text-muted-foreground mt-1">
                         Post ID: {post.id} | User: {post.userId}
