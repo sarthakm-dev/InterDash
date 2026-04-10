@@ -41,6 +41,7 @@ class ErrorBoundary extends React.Component<
   }
   componentDidCatch(error: any, errorInfo: any) {
     console.log('Error caught:', error);
+    
     //fix the error boundary in componenet did catch
     this.setState((prev) => {
       return {
