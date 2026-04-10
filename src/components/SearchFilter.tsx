@@ -67,7 +67,6 @@ const SearchFilter = ({ data, onFilter, theme, counter }: SearchFilterProps) => 
   useEffect(() => {
     if (query.length > 2) {
       const regexResults = regexSearch(query);
-      console.log('Regex search found', regexResults.length, 'results');
     }
   }, [query, counter]);
 
