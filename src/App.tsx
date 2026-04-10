@@ -157,6 +157,7 @@ function App() {
     const interval = setInterval(() => {
       setCounter((prev) => prev + 1);
     }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
