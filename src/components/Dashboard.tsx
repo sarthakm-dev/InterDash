@@ -84,46 +84,49 @@ const Dashboard = ({
 
   const fetchAllData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
+    setError(null);
     console.log('Fetching all data...');
 
     try {
-      const usersRes = await fetch('https://jsonplaceholder.typicode.com/users', { signal });
-      const usersData = await usersRes.json();
-      if (signal?.aborted) return;
-      setUsers(usersData);
+      const fetchJson = async (url: string) => {
+        const response = await fetch(url, { signal });
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+      };
 
-      const postsRes = await fetch('https://jsonplaceholder.typicode.com/posts', { signal });
-      const postsData = await postsRes.json();
-      if (signal?.aborted) return;
-      setPosts(postsData);
+      const dataRequests = await Promise.allSettled([
+        fetchJson('https://jsonplaceholder.typicode.com/users'),
+        fetchJson('https://jsonplaceholder.typicode.com/posts'),
+        fetchJson('https://jsonplaceholder.typicode.com/todos'),
+        fetchJson('https://jsonplaceholder.typicode.com/comments'),
+        fetchJson('https://jsonplaceholder.typicode.com/albums'),
+        fetchJson('https://jsonplaceholder.typicode.com/photos'),
+        fetchJson(
+          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1',
+        ),
+      ]);
 
-      const todosRes = await fetch('https://jsonplaceholder.typicode.com/todos', { signal });
-      const todosData = await todosRes.json();
       if (signal?.aborted) return;
-      setTodos(todosData);
 
-      const commentsRes = await fetch('https://jsonplaceholder.typicode.com/comments', { signal });
-      const commentsData = await commentsRes.json();
-      if (signal?.aborted) return;
-      setComments(commentsData);
+      const [
+        usersResult,
+        postsResult,
+        todosResult,
+        commentsResult,
+        albumsResult,
+        photosResult,
+        cryptoResult,
+      ] = dataRequests;
 
-      const albumsRes = await fetch('https://jsonplaceholder.typicode.com/albums', { signal });
-      const albumsData = await albumsRes.json();
-      if (signal?.aborted) return;
-      setAlbums(albumsData);
-
-      const photosRes = await fetch('https://jsonplaceholder.typicode.com/photos', { signal });
-      const photosData = await photosRes.json();
-      if (signal?.aborted) return;
-      setPhotos(photosData);
-
-      const cryptoRes = await fetch(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1',
-        { signal },
-      );
-      const cryptoJson = await cryptoRes.json();
-      if (signal?.aborted) return;
-      setCryptoData(cryptoJson);
+      if (usersResult.status === 'fulfilled') setUsers(usersResult.value);
+      if (postsResult.status === 'fulfilled') setPosts(postsResult.value);
+      if (todosResult.status === 'fulfilled') setTodos(todosResult.value);
+      if (commentsResult.status === 'fulfilled') setComments(commentsResult.value);
+      if (albumsResult.status === 'fulfilled') setAlbums(albumsResult.value);
+      if (photosResult.status === 'fulfilled') setPhotos(photosResult.value);
+      if (cryptoResult.status === 'fulfilled') setCryptoData(cryptoResult.value);
 
       const cities = [
         { name: 'London', lat: 51.5, lon: -0.12 },
@@ -133,17 +136,33 @@ const Dashboard = ({
         { name: 'Paris', lat: 48.85, lon: 2.35 },
       ];
 
-      const weatherResults: any[] = [];
-      for (const city of cities) {
-        const wRes = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`,
-          { signal },
-        );
-        const wData = await wRes.json();
-        if (signal?.aborted) return;
-        weatherResults.push({ ...city, weather: wData.current_weather });
+      const weatherRequests = await Promise.allSettled(
+        cities.map(async (city) => {
+          const weather = await fetchJson(
+            `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`,
+          );
+          return { ...city, weather: weather.current_weather };
+        }),
+      );
+
+      if (signal?.aborted) return;
+
+      setWeatherData(
+        weatherRequests
+          .filter(
+            (result): result is PromiseFulfilledResult<{ name: string; lat: number; lon: number; weather: unknown }> => result.status === 'fulfilled',
+          )
+          .map((result) => result.value),
+      );
+
+      const failedRequests = [...dataRequests, ...weatherRequests].filter(
+        (result) => result.status === 'rejected',
+      );
+
+      if (failedRequests.length > 0) {
+        
+        setError('Some dashboard data could not be loaded.');
       }
-      setWeatherData(weatherResults);
 
       setLoading(false);
       setLastUpdated(moment().format('HH:mm:ss'));
@@ -169,7 +188,7 @@ const Dashboard = ({
   useEffect(() => {
     const handleResize = () => {
       console.log('Window resized:', window.innerWidth)
-      setExpandedSections({...expandedSections})
+      setExpandedSections({ ...expandedSections })
     }
     window.addEventListener('resize', handleResize)
     window.addEventListener('scroll', handleResize)
@@ -257,16 +276,20 @@ const Dashboard = ({
 
     const sorted = _.orderBy(filtered, ['id'], [sortOrder]);
 
-   //removed fibnocci recursive function due to heavy computation and replaced with simple sort and filter logic. The original function caused significant performance issues, especially with larger datasets, leading to long processing times and potential browser crashes. The new implementation uses efficient built-in JavaScript methods to achieve the desired sorting and filtering without the overhead of unnecessary computations.
+    //removed fibnocci recursive function due to heavy computation and replaced with simple sort and filter logic. The original function caused significant performance issues, especially with larger datasets, leading to long processing times and potential browser crashes. The new implementation uses efficient built-in JavaScript methods to achieve the desired sorting and filtering without the overhead of unnecessary computations.
 
     return sorted;
   };
 
   const handleAddTodo = (text: string) => {
-    const newTodo = { id: todos.length + 1, title: text, completed: false, userId: 1 };
-    todos.push(newTodo); // Direct mutation!
-    setTodos(todos); // React won't detect this change
-  };
+    const newTodo = { id: todos.length + 1, title: text, completed: false, userId: 1 }
+    todos.push(newTodo) // Direct mutation!
+    setTodos(todos) // React won't detect this change
+  }
+
+  const handleEditTodo = (id: number, text: string) => {
+    setTodos(todos.map(t => t.id === id ? { ...t, title: text } : t))
+  }
 
   const handleDeleteTodo = (id: number) => {
     const index = todos.findIndex((t) => t.id === id);
@@ -289,18 +312,17 @@ const Dashboard = ({
   }, []);
 
   const handleSelectItem = (item: any) => {
-    selectedItems.push(item);
-    setSelectedItems(selectedItems);
-  };
+    setSelectedItems(prev => [...prev.slice(-50), item])
+  }
 
   const getPaginatedData = (data: any[]) => {
     const start = (page - 1) * itemsPerPage;
-    const end = start + itemsPerPage + 1;
+    const end = start + itemsPerPage;
     return data.slice(start, end);
   };
 
   const totalPages = (data: any[]) => {
-    return Math.floor(data.length / itemsPerPage);
+    return Math.ceil(data.length / itemsPerPage);
   };
 
   const handleFormChange = (field: string, value: any) => {
@@ -413,6 +435,7 @@ const Dashboard = ({
                   theme={theme}
                   counter={counter}
                   users={users}
+                  posts={posts}
                   globalSearchQuery={globalSearchQuery}
                   onUserClick={(user) => {
                     console.log(user);
@@ -424,6 +447,7 @@ const Dashboard = ({
                   theme={theme}
                   counter={counter}
                   posts={getSortedAndFilteredPosts()}
+                  comments={_.groupBy(comments, 'postId')}
                   onPostClick={(post) => {
                     console.log(post);
                     setModalContent(post);
@@ -437,6 +461,7 @@ const Dashboard = ({
                 onAdd={handleAddTodo}
                 onDelete={handleDeleteTodo}
                 onToggle={handleToggleTodo}
+                onEdit={handleEditTodo}
                 theme={theme}
                 counter={counter}
               />
@@ -538,7 +563,13 @@ const Dashboard = ({
                         placeholder="Your name"
                         className="h-8 text-sm mt-1"
                       />
+
                       {/* BUG ISSUE-050: validationErrors.profileName is never rendered here */}
+                      {validationErrors.profileName && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {validationErrors.profileName}
+                          </p>
+                        )}
                     </div>
                     <div>
                       <label className="text-xs font-medium">Email</label>
@@ -549,6 +580,11 @@ const Dashboard = ({
                         className="h-8 text-sm mt-1"
                       />
                       {/* BUG ISSUE-050: validationErrors.profileEmail is never rendered here */}
+                      {validationErrors.profileName && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {validationErrors.profileName}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="text-xs font-medium">Bio</label>
@@ -559,6 +595,11 @@ const Dashboard = ({
                         className="h-8 text-sm mt-1"
                       />
                       {/* BUG ISSUE-050: validationErrors.profileBio is never rendered here */}
+                      {validationErrors.profileBio && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {validationErrors.profileBio}
+                        </p>
+                      )}
                     </div>
                     <Button
                       size="sm"
@@ -583,7 +624,7 @@ const Dashboard = ({
               <h2 className="text-lg font-semibold">Posts</h2>
               {filterText && (
                 <div className="text-sm text-muted-foreground">
-                  Filtering by: <span dangerouslySetInnerHTML={{ __html: filterHighlight }} />
+                  Filtering by: <span className="font-medium">{filterText}</span>
                 </div>
               )}
               <div className="flex gap-2">
@@ -607,9 +648,8 @@ const Dashboard = ({
                   <Card key={index}>
                     <CardContent className="p-3">
                       <h4
-                        className="font-semibold text-sm"
-                        dangerouslySetInnerHTML={{ __html: post.title }}
-                      />
+                      //removed setinnerHTML
+                        className="font-semibold text-sm">{post.title}</h4>
                       <p className="text-xs text-muted-foreground mt-1">{post.body}</p>
                       <div className="text-[11px] text-muted-foreground mt-1">
                         Post ID: {post.id} | User: {post.userId}
@@ -650,6 +690,7 @@ const Dashboard = ({
                 onAdd={handleAddTodo}
                 onDelete={handleDeleteTodo}
                 onToggle={handleToggleTodo}
+                onEdit={handleEditTodo}
                 theme={theme}
                 counter={counter}
               />
@@ -667,7 +708,7 @@ const Dashboard = ({
 
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-300"
           onClick={() => setModalOpen(false)}
         >
           <Card
