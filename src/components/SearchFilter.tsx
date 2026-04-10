@@ -25,6 +25,16 @@ const SearchFilter = ({ data, onFilter, theme, counter }: SearchFilterProps) => 
   // prop to the DOM input element, which resets the cursor to the end of the
   // string — even if the user was typing in the middle of the text.
   const [displayValue, setDisplayValue] = useState('');
+  const regexHelper=(str:string)=>{
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setQuery(displayValue) 
+    }, 300) 
+
+    return () => clearTimeout(handler) 
+  }, [displayValue])
 
   useEffect(() => {
     if (query) {
@@ -50,7 +60,8 @@ const SearchFilter = ({ data, onFilter, theme, counter }: SearchFilterProps) => 
 
   const regexSearch = (q: string) => {
     try {
-      const regex = new RegExp(q, 'i');
+      const safeQuery=regexHelper(q);
+      const regex = new RegExp(safeQuery, 'i');
       return (data || []).filter((item: any) => regex.test(JSON.stringify(item)));
     } catch (e) {
       return [];

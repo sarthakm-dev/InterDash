@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import groupBy from 'lodash/groupBy';
 
 import WeatherWidget from '../WeatherWidget';
@@ -48,6 +48,29 @@ const DashboardOverviewTab = ({
   onProfileSave,
   getSortedAndFilteredPosts,
 }: DashboardOverviewTabProps) => {
+  const shimmerRef = useRef<HTMLDivElement | null>(null);
+  const [isShimmerInView, setIsShimmerInView] = useState(true);
+
+  useEffect(() => {
+    const shimmerElement = shimmerRef.current;
+    if (!shimmerElement || typeof IntersectionObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsShimmerInView(entry.isIntersecting);
+      },
+      { threshold: 0.01 },
+    );
+
+    observer.observe(shimmerElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <Suspense
       fallback={
@@ -59,7 +82,10 @@ const DashboardOverviewTab = ({
       <div className="space-y-5">
         <h2 className="text-lg font-semibold">Overview - Last updated: {lastUpdated}</h2>
 
-        <div className="loading-shimmer h-1 w-full mb-1 rounded" />
+        <div
+          ref={shimmerRef}
+          className={`loading-shimmer h-1 w-full mb-1 rounded ${isShimmerInView ? 'shimmer-running' : 'shimmer-paused'}`}
+        />
 
         <div className="grid grid-cols-2 gap-5" style={{ width: '1100px', minWidth: '1100px' }}>
           <CryptoTracker
