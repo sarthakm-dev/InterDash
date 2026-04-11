@@ -1,26 +1,27 @@
-import React, { useState, useEffect, createContext, useRef } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Dashboard from './components/Dashboard'
-import Header from './components/Header'
-import CryptoTracker from './components/CryptoTracker'
-import WeatherWidget from './components/WeatherWidget'
-import UserList from './components/UserList'
-import PostsFeed from './components/PostsFeed'
-import TodoList from './components/TodoList'
-import DataChart from './components/DataChart'
-import ImageGallery from './components/ImageGallery'
-import MarkdownEditor from './components/MarkdownEditor'
-import Analytics from './components/Analytics'
-import SearchFilter from './components/SearchFilter'
-import Footer from './components/Footer'
-import ThreeScene from './components/ThreeScene'
-import ReportGenerator from './components/ReportGenerator'
-import D3Visualization from './components/D3Visualization'
-import MathPlayground from './components/MathPlayground'
+import React, { useState, useEffect, createContext, useRef, Suspense, lazy } from 'react'
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+
+
+const Dashboard = lazy(() => import('./components/Dashboard'))
+const Header = lazy(() => import('./components/Header'))
+const CryptoTracker = lazy(() => import('./components/CryptoTracker'))
+const WeatherWidget = lazy(() => import('./components/WeatherWidget'))
+const UserList = lazy(() => import('./components/UserList'))
+const PostsFeed = lazy(() => import('./components/PostsFeed'))
+const TodoList = lazy(() => import('./components/TodoList'))
+const DataChart = lazy(() => import('./components/DataChart'))
+const ImageGallery = lazy(() => import('./components/ImageGallery'))
+const MarkdownEditor = lazy(() => import('./components/MarkdownEditor'))
+const Analytics = lazy(() => import('./components/Analytics'))
+const SearchFilter = lazy(() => import('./components/SearchFilter'))
+const Footer = lazy(() => import('./components/Footer'))
+const ThreeScene = lazy(() => import('./components/ThreeScene'))
+const ReportGenerator = lazy(() => import('./components/ReportGenerator'))
+const D3Visualization = lazy(() => import('./components/D3Visualization'))
+const MathPlayground = lazy(() => import('./components/MathPlayground'))
 
 export const AppContext = createContext<any>({})
 
-// ISSUE-055: Toast type
 interface Toast {
   id: number
   message: string
@@ -37,7 +38,10 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
   componentDidCatch(error: any, errorInfo: any) {
     console.log('Error caught:', error)
-    this.state.errorLog.push({ error: error.toString(), time: Date.now() })
+    this.setState(prev => ({
+      ...prev,
+      errorLog: [...prev.errorLog, { error: error.toString(), time: Date.now() }]
+    }))
   }
   render() {
     if (this.state.hasError) {
@@ -46,6 +50,12 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     return this.props.children
   }
 }
+
+const PageFallback = () => (
+  <div className="flex items-center justify-center p-12 text-sm text-muted-foreground">
+    Loading...
+  </div>
+)
 
 function App() {
   const [theme, setTheme] = useState('light')
@@ -58,10 +68,6 @@ function App() {
   const [routeHistory, setRouteHistory] = useState<string[]>([])
   const [debugMode, setDebugMode] = useState(false)
 
-  // ISSUE-055: toasts array grows without bound.
-  // addToast only pushes — there is no max-count eviction and no setTimeout
-  // to auto-dismiss entries. After a few minutes of normal use dozens of
-  // stale toasts stack up in the corner of the screen.
   const MAX_TOASTS = 5
   const [toasts, setToasts] = useState<Toast[]>([])
   const _toastCounter = useRef(0)
@@ -76,6 +82,7 @@ function App() {
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 3000)
   }
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const redirectUrl = params.get('redirect') || params.get('next') || params.get('return_to')
@@ -127,11 +134,11 @@ function App() {
     window.addEventListener('message', handler)
   }, [])
 
-  // and triggers re-render of EVERYTHING
   useEffect(() => {
     const interval = setInterval(() => {
       setCounter(prev => prev + 1)
     }, 1000)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -159,7 +166,6 @@ function App() {
     }
   })
 
-  //remove counter from useEffect deps
   useEffect(() => {
     const path = window.location.pathname;
     setRouteHistory((prev) => [...prev, path]);
@@ -220,22 +226,23 @@ function App() {
           <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
             <input type="hidden" name="user_token" value={user?.token || ''} />
             <input type="hidden" name="user_data" value={JSON.stringify(user || {})} />
-            <Header
-              theme={theme}
-              onThemeToggle={handleThemeToggle}
-              user={user}
-              setUser={setUser}
-              notifications={notifications}
-              sidebarOpen={sidebarOpen}
-              setSidebarOpen={setSidebarOpen}
-              globalSearchQuery={globalSearchQuery}
-              setGlobalSearchQuery={setGlobalSearchQuery}
-              counter={counter}
-            />
-            {/* ISSUE-049: Fixed pixel widths cause horizontal overflow on narrow viewports.
-                The outer flex wrapper and sidebar both use hardcoded px widths instead of
-                responsive units — viewports narrower than 900px get a horizontal scrollbar
-                and right-side content is clipped. */}
+
+            {/* ISSUE-014 fix: Header is lazy so must be inside Suspense */}
+            <Suspense fallback={<PageFallback />}>
+              <Header
+                theme={theme}
+                onThemeToggle={handleThemeToggle}
+                user={user}
+                setUser={setUser}
+                notifications={notifications}
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                globalSearchQuery={globalSearchQuery}
+                setGlobalSearchQuery={setGlobalSearchQuery}
+                counter={counter}
+              />
+            </Suspense>
+
             <div className="flex min-w-0 w-full overflow-x-hidden">
               {sidebarOpen && (
                 <div
@@ -244,75 +251,85 @@ function App() {
                 >
                   <h3 className="font-semibold mb-3">Navigation</h3>
                   <p className="text-xs text-muted-foreground mb-4">Uptime: {counter}s</p>
+
                   <nav className="space-y-1">
-                    <a href="/" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Dashboard</a>
-                    <a href="/crypto" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Crypto</a>
-                    <a href="/weather" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Weather</a>
-                    <a href="/users" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Users</a>
-                    <a href="/posts" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Posts</a>
-                    <a href="/todos" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Todos</a>
-                    <a href="/charts" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Charts</a>
-                    <a href="/gallery" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Gallery</a>
-                    <a href="/editor" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Markdown</a>
-                    <a href="/analytics" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Analytics</a>
-                    <a href="/search" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Search</a>
-                    <a href="/3d" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">3D Scene</a>
-                    <a href="/reports" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Reports</a>
-                    <a href="/d3" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">D3 Graph</a>
-                    <a href="/math" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Math</a>
+                    <Link to="/" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Dashboard</Link>
+                    <Link to="/crypto" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Crypto</Link>
+                    <Link to="/weather" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Weather</Link>
+                    <Link to="/users" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Users</Link>
+                    <Link to="/posts" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Posts</Link>
+                    <Link to="/todos" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Todos</Link>
+                    <Link to="/charts" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Charts</Link>
+                    <Link to="/gallery" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Gallery</Link>
+                    <Link to="/editor" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Markdown</Link>
+                    <Link to="/analytics" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Analytics</Link>
+                    <Link to="/search" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Search</Link>
+                    <Link to="/3d" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">3D Scene</Link>
+                    <Link to="/reports" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Reports</Link>
+                    <Link to="/d3" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">D3 Graph</Link>
+                    <Link to="/math" className="block px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">Math</Link>
                   </nav>
+
                   <div className="mt-4 text-[10px] text-muted-foreground max-h-[100px] overflow-auto">
                     <p className="font-semibold">Route History ({routeHistory.length}):</p>
                     {routeHistory.map((r, i) => <div key={i}>{r}</div>)}
                   </div>
                 </div>
               )}
+
               <main className="min-w-0 flex-1 p-5 overflow-auto">
-                <Routes>
-                  <Route path="/" element={
-                    <Dashboard
-                      theme={theme}
-                      user={user}
-                      notifications={notifications}
-                      globalSearchQuery={globalSearchQuery}
-                      setGlobalSearchQuery={setGlobalSearchQuery}
-                      counter={counter}
-                      sidebarOpen={sidebarOpen}
-                      getFilteredData={getFilteredData}
-                      appData={appData}
-                      setAppData={setAppData}
-                      handleThemeToggle={handleThemeToggle}
-                    />
-                  } />
-                  <Route path="/crypto" element={<CryptoTracker theme={theme} counter={counter} />} />
-                  <Route path="/weather" element={<WeatherWidget theme={theme} counter={counter} />} />
-                  <Route path="/users" element={<UserList theme={theme} counter={counter} globalSearchQuery={globalSearchQuery} />} />
-                  <Route path="/posts" element={<PostsFeed theme={theme} counter={counter} />} />
-                  <Route path="/todos" element={<TodoList todos={[]} onAdd={() => { }} onEdit={() => { }} onDelete={() => { }} onToggle={() => { }} theme={theme} counter={counter} />} />
-                  <Route path="/charts" element={<DataChart posts={[]} users={[]} todos={[]} comments={[]} theme={theme} counter={counter} />} />
-                  <Route path="/gallery" element={<ImageGallery photos={[]} theme={theme} counter={counter} />} />
-                  <Route path="/editor" element={<MarkdownEditor theme={theme} counter={counter} />} />
-                  <Route path="/analytics" element={<Analytics posts={[]} users={[]} todos={[]} comments={[]} albums={[]} photos={[]} theme={theme} counter={counter} />} />
-                  <Route path="/search" element={<SearchFilter data={[]} theme={theme} counter={counter} />} />
-                  <Route path="/3d" element={<ThreeScene counter={counter} theme={theme} />} />
-                  <Route path="/reports" element={<ReportGenerator posts={[]} users={[]} counter={counter} theme={theme} />} />
-                  <Route path="/d3" element={<D3Visualization data={[]} counter={counter} theme={theme} />} />
-                  <Route path="/math" element={<MathPlayground counter={counter} theme={theme} />} />
-                </Routes>
+           
+                <Suspense fallback={<PageFallback />}>
+                  <Routes>
+                    <Route path="/" element={
+                      <Dashboard
+                        theme={theme}
+                        user={user}
+                        notifications={notifications}
+                        globalSearchQuery={globalSearchQuery}
+                        setGlobalSearchQuery={setGlobalSearchQuery}
+                        counter={counter}
+                        sidebarOpen={sidebarOpen}
+                        getFilteredData={getFilteredData}
+                        appData={appData}
+                        setAppData={setAppData}
+                        handleThemeToggle={handleThemeToggle}
+                      />
+                    } />
+                    <Route path="/crypto" element={<CryptoTracker theme={theme} counter={counter} />} />
+                    <Route path="/weather" element={<WeatherWidget theme={theme} counter={counter} />} />
+                    <Route path="/users" element={<UserList theme={theme} counter={counter} globalSearchQuery={globalSearchQuery} />} />
+                    <Route path="/posts" element={<PostsFeed theme={theme} counter={counter} />} />
+                    <Route path="/todos" element={<TodoList todos={[]} onAdd={() => { }} onEdit={() => { }} onDelete={() => { }} onToggle={() => { }} theme={theme} counter={counter} />} />
+                    <Route path="/charts" element={<DataChart posts={[]} users={[]} todos={[]} comments={[]} theme={theme} counter={counter} />} />
+                    <Route path="/gallery" element={<ImageGallery photos={[]} theme={theme} counter={counter} />} />
+                    <Route path="/editor" element={<MarkdownEditor theme={theme} counter={counter} />} />
+                    <Route path="/analytics" element={<Analytics posts={[]} users={[]} todos={[]} comments={[]} albums={[]} photos={[]} theme={theme} counter={counter} />} />
+                    <Route path="/search" element={<SearchFilter data={[]} theme={theme} counter={counter} />} />
+                    <Route path="/3d" element={<ThreeScene counter={counter} theme={theme} />} />
+                    <Route path="/reports" element={<ReportGenerator posts={[]} users={[]} counter={counter} theme={theme} />} />
+                    <Route path="/d3" element={<D3Visualization data={[]} counter={counter} theme={theme} />} />
+                    <Route path="/math" element={<MathPlayground counter={counter} theme={theme} />} />
+                  </Routes>
+                </Suspense>
               </main>
             </div>
-            <Footer theme={theme} counter={counter} notifications={notifications} />
 
-            {/* ISSUE-055: Toast container — toasts stack forever, no auto-dismiss */}
+            <Suspense fallback={null}>
+              <Footer theme={theme} counter={counter} notifications={notifications} />
+            </Suspense>
+
             <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-[9999]" style={{ maxWidth: '320px' }}>
               {toasts.map(toast => (
                 <div
                   key={toast.id}
-                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' :
+                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${
+                    toast.type === 'error' ? 'bg-red-500' :
                     toast.type === 'success' ? 'bg-green-600' : 'bg-blue-500'
-                    }`}
+                  }`}
                 >
                   <span className="flex-1">{toast.message}</span>
+                  {/* ISSUE-014 fix: button instead of href="#" for dismiss */}
                   <button
                     className="text-white/70 hover:text-white text-lg leading-none"
                     onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
@@ -328,7 +345,3 @@ function App() {
 }
 
 export default App
-function setToasts(arg0: (prev: any) => any) {
-  throw new Error('Function not implemented.')
-}
-
