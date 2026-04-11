@@ -7,12 +7,18 @@ import type { DataChartProps, Todo } from '@/lib/types';
 
 Chart.register(...registerables);
 
-const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartProps) => {
+const arePropsEqual = (prev: DataChartProps, next: DataChartProps) =>
+  prev.posts.length    === next.posts.length    &&
+  prev.users.length    === next.users.length    &&
+  prev.todos.length    === next.todos.length    &&
+  prev.comments.length === next.comments.length &&
+  prev.theme           === next.theme;
+
+const DataChart = React.memo(({ posts, users, todos, comments, theme, counter }: DataChartProps) => {
   const chartRef1 = useRef<HTMLCanvasElement>(null);
   const chartRef2 = useRef<HTMLCanvasElement>(null);
   const chartRef3 = useRef<HTMLCanvasElement>(null);
 
-  // ✅ Use refs instead of state
   const chartInstance1 = useRef<Chart | null>(null);
   const chartInstance2 = useRef<Chart | null>(null);
   const chartInstance3 = useRef<Chart | null>(null);
@@ -20,7 +26,6 @@ const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartP
 
   useEffect(() => {
     if (!chartRef1.current || posts.length === 0) return;
-
 
     chartInstance1.current?.destroy();
 
@@ -52,9 +57,9 @@ const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartP
     return () => {
       chartInstance1.current?.destroy();
     };
-  }, [posts, counter]);
+  }, [posts]); 
 
-
+  
   useEffect(() => {
     if (!chartRef2.current || todos.length === 0) return;
 
@@ -82,9 +87,9 @@ const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartP
     return () => {
       chartInstance2.current?.destroy();
     };
-  }, [todos, counter]);
+  }, [todos]); 
 
-
+  
   useEffect(() => {
     if (!chartRef3.current || comments.length === 0) return;
 
@@ -117,7 +122,7 @@ const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartP
     return () => {
       chartInstance3.current?.destroy();
     };
-  }, [comments, counter]);
+  }, [comments]); 
 
   return (
     <Card>
@@ -148,6 +153,8 @@ const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartP
       </CardContent>
     </Card>
   );
-};
+}, arePropsEqual);
+
+DataChart.displayName = 'DataChart';
 
 export default DataChart;
