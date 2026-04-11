@@ -21,6 +21,7 @@ const ReportGenerator = lazy(() => import('./components/ReportGenerator'))
 const D3Visualization = lazy(() => import('./components/D3Visualization'))
 const MathPlayground = lazy(() => import('./components/MathPlayground'))
 
+
 export const AppContext = createContext<AppContextValue>({
   theme: 'light',
   user: null,
@@ -417,18 +418,12 @@ function App() {
                       path="/"
                       element={
                         <Dashboard
-                          theme={theme}
                           user={user}
                           notifications={notifications}
-                          globalSearchQuery={globalSearchQuery}
-                          setGlobalSearchQuery={setGlobalSearchQuery}
-                          counter={counter}
                           sidebarOpen={sidebarOpen}
                           getFilteredData={getFilteredData}
                           appData={appData}
-                          setAppData={setAppData}
-                          handleThemeToggle={handleThemeToggle}
-                        />
+                          setAppData={setAppData}                       />
                       }
                     />
                     <Route
