@@ -46,8 +46,7 @@ const Analytics = React.memo(({
   theme,
   counter,
 }: AnalyticsProps) => {
-  // Replaces useState+useEffect+setCalculating pattern: useMemo recomputes only
-  // when the actual data deps change, never because counter ticked.
+  
   const stats = useMemo(() => {
     const result: Partial<AnalyticsStats> = {};
 
@@ -111,7 +110,7 @@ const Analytics = React.memo(({
       { name: 'Pending', value: pending },
     ];
 
-    // Capture timestamp at the moment stats are (re)calculated, not on every render
+    
     result.calculationTimestamp = moment().format('HH:mm:ss.SSS');
 
     return result;

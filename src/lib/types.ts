@@ -229,6 +229,7 @@ export interface AnalyticsStats {
   postsPerUser: Record<string, number>;
   commentsPerPost: Record<string, number>;
   avgWordCount: number;
+  calculationTimestamp?: string;
   completionRates: Record<string, string>;
   userActivity: AnalyticsUserActivity[];
   postsChartData: Array<{ name: string; posts: number }>;

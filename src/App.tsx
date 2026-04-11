@@ -122,26 +122,35 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      if (event.data && typeof event.data === 'object') {
-        const merge = (target: any, source: any) => {
-          for (const key in source) {
-            if (typeof source[key] === 'object' && source[key] !== null) {
-              if (!target[key]) target[key] = {};
-              merge(target[key], source[key]);
-            } else {
-              target[key] = source[key];
-            }
-          }
-        };
-        merge(appData, event.data);
-        setAppData({ ...appData });
-        console.log('Merged postMessage data:', event.data);
-      }
-    };
-    window.addEventListener('message', handler);
-  }, []);
+    const ALLOWED_ORIGINS = [window.location.origin];
+    const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
+    const safeMerge = (target: any, source: any): any => {
+      for (const key of Object.keys(source)) { // ✅ Object.keys = own props only
+        if (BLOCKED_KEYS.has(key)) continue;   // ✅ continue, not return
+        const val = source[key];
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          target[key] = safeMerge(
+            target[key] && typeof target[key] === 'object' ? { ...target[key] } : {},
+            val,
+          );
+        } else {
+          target[key] = val;
+        }
+      }
+      return target;
+    };
+
+    const handler = (event: MessageEvent) => {
+      if (!ALLOWED_ORIGINS.includes(event.origin)) return;
+      if (!event.data || typeof event.data !== 'object' || Array.isArray(event.data)) return;
+
+      setAppData((prev) => safeMerge({ ...prev }, event.data));
+    };
+
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
   useEffect(() => {
     const interval = setInterval(() => {
       setCounter((prev) => prev + 1);
@@ -176,7 +185,7 @@ function App() {
         const parsed = JSON.parse(saved);
         console.log('Restored state from localStorage:', parsed.counter);
       }
-    } catch (e) {}
+    } catch (e) { }
   });
 
   useEffect(() => {
@@ -260,7 +269,7 @@ function App() {
           email: username + '@company.com',
           token: btoa(username + ':' + password),
         });
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
@@ -446,10 +455,10 @@ function App() {
                       element={
                         <TodoList
                           todos={[]}
-                          onAdd={() => {}}
-                          onEdit={() => {}}
-                          onDelete={() => {}}
-                          onToggle={() => {}}
+                          onAdd={() => { }}
+                          onEdit={() => { }}
+                          onDelete={() => { }}
+                          onToggle={() => { }}
                           theme={theme}
                           counter={counter}
                         />
@@ -526,13 +535,12 @@ function App() {
               {toasts.map((toast) => (
                 <div
                   key={toast.id}
-                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${
-                    toast.type === 'error'
+                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${toast.type === 'error'
                       ? 'bg-red-500'
                       : toast.type === 'success'
                         ? 'bg-green-600'
                         : 'bg-blue-500'
-                  }`}
+                    }`}
                 >
                   <span className="flex-1">{toast.message}</span>
                   {/* ISSUE-014 fix: button instead of href="#" for dismiss */}

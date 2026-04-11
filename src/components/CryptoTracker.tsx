@@ -10,13 +10,13 @@ import { API_ENDPOINTS } from '../utils/constants';
 import type { CryptoData, CryptoTrackerProps } from '@/lib/types';
 
 const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) => {
-  const [coins, setCoins] = useState<CryptoData[]>(data || []);  // <- added
+  const [coins, setCoins] = useState<CryptoData[]>(data || []);  
   const [sortBy, setSortBy] = useState('market_cap');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [search, setSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  // fetch only when no data passed in                     // <- added
+
   useEffect(() => {
     if (data && data.length > 0) return;
     fetch(`${API_ENDPOINTS.crypto}?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
