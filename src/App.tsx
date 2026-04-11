@@ -126,8 +126,8 @@ function App() {
     const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
     const safeMerge = (target: any, source: any): any => {
-      for (const key of Object.keys(source)) { // ✅ Object.keys = own props only
-        if (BLOCKED_KEYS.has(key)) continue;   // ✅ continue, not return
+      for (const key of Object.keys(source)) { 
+        if (BLOCKED_KEYS.has(key)) continue;   
         const val = source[key];
         if (val && typeof val === 'object' && !Array.isArray(val)) {
           target[key] = safeMerge(
