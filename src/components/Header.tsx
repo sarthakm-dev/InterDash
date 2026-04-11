@@ -4,19 +4,7 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Bell, Menu, Moon, Sun, Search } from 'lucide-react';
-
-interface HeaderProps {
-  theme: string;
-  onThemeToggle: () => void;
-  user: any;
-  setUser: (user: any) => void;
-  notifications: any[];
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-  globalSearchQuery: string;
-  setGlobalSearchQuery: (q: string) => void;
-  counter: number;
-}
+import { HeaderProps, HeaderSearchResult } from '@/lib/types';
 
 const Header = ({
   theme,
@@ -31,7 +19,7 @@ const Header = ({
   counter,
 }: HeaderProps) => {
   const [currentTime, setCurrentTime] = useState(moment().format('HH:mm:ss'));
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<HeaderSearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   // ISSUE-051: showSettingsMenu toggled by button click only.
@@ -52,13 +40,13 @@ const Header = ({
     };
   }, []);
 
-   useEffect(() => {
-  const handler = setTimeout(() => {
-    setDebouncedQuery(globalSearchQuery)
-  }, 300)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(globalSearchQuery)
+    }, 300)
 
-  return () => clearTimeout(handler)
-}, [globalSearchQuery])
+    return () => clearTimeout(handler)
+  }, [globalSearchQuery])
 
 
   useEffect(() => {
@@ -138,7 +126,7 @@ const Header = ({
         </div>
         {showDropdown && searchResults.length > 0 && (
           <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 max-h-[200px] overflow-auto z-100 rounded-md shadow-lg">
-            {searchResults.map((result: any, idx: number) => (
+            {searchResults.map((result: HeaderSearchResult, idx: number) => (
               <button
                 key={idx}
                 className="p-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 text-sm"
@@ -170,27 +158,24 @@ const Header = ({
           </button>
           {showNotifPanel && (
             <div
-              className={`absolute top-full right-0 z-50 mt-2 max-h-75 w-75 overflow-auto rounded-md border shadow-lg ${
-                theme === 'dark'
-                  ? 'border-gray-700 bg-gray-800 text-gray-100'
-                  : 'border-gray-200 bg-white text-gray-900'
-              }`}
+              className={`absolute top-full right-0 z-50 mt-2 max-h-75 w-75 overflow-auto rounded-md border shadow-lg ${theme === 'dark'
+                ? 'border-gray-700 bg-gray-800 text-gray-100'
+                : 'border-gray-200 bg-white text-gray-900'
+                }`}
             >
               <div
-                className={`p-3 border-b font-semibold text-sm ${
-                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                }`}
+                className={`p-3 border-b font-semibold text-sm ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                  }`}
               >
                 Notifications ({notifications.length})
               </div>
               {notifications.map((notif, i: number) => (
                 <button
                   key={i}
-                  className={`cursor-pointer p-2 text-xs border-b ${
-                    theme === 'dark'
-                      ? 'border-gray-700 hover:bg-gray-700/60'
-                      : 'border-gray-100 hover:bg-gray-50'
-                  }`}
+                  className={`cursor-pointer p-2 text-xs border-b ${theme === 'dark'
+                    ? 'border-gray-700 hover:bg-gray-700/60'
+                    : 'border-gray-100 hover:bg-gray-50'
+                    }`}
                 >
                   <div>{notif.body?.slice(0, 80)}</div>
                   {/* ISSUE-052: #aaa on #fff ≈ 2.3:1 contrast — fails WCAG AA */}

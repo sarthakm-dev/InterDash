@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-
-interface FooterProps {
-  theme: string;
-  counter: number;
-  notifications: any[];
-}
+import type { FooterProps } from '@/lib/types';
 
 const Footer = ({ theme, counter, notifications }: FooterProps) => {
   const [footerTime, setFooterTime] = useState(moment().format('HH:mm:ss'));

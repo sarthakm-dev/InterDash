@@ -4,6 +4,7 @@ import moment from 'moment';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Activity, BarChart, Users, FileText, CheckSquare, Image } from 'lucide-react';
+import type { AnalyticsProps, AnalyticsStats, Todo } from '@/lib/types';
 
 import {
   BarChart as ReBarChart,
@@ -21,17 +22,6 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
-
-interface AnalyticsProps {
-  posts: any[];
-  users: any[];
-  todos: any[];
-  comments: any[];
-  albums: any[];
-  photos: any[];
-  theme: string;
-  counter: number;
-}
 
 const COLORS = [
   '#0088FE',
@@ -59,7 +49,7 @@ const Analytics = React.memo(({
   // Replaces useState+useEffect+setCalculating pattern: useMemo recomputes only
   // when the actual data deps change, never because counter ticked.
   const stats = useMemo(() => {
-    const result: any = {};
+    const result: Partial<AnalyticsStats> = {};
 
     result.postsPerUser = _.countBy(posts, 'userId');
     result.commentsPerPost = _.countBy(comments, 'postId');
@@ -71,7 +61,7 @@ const Analytics = React.memo(({
 
     result.completionRates = {} as Record<string, string>;
     Object.entries(todosByUser).forEach(([userId, userTodos]: [string, any[]]) => {
-      const completed = userTodos.filter((t: any) => t.completed).length;
+      const completed = userTodos.filter((t: Todo) => t.completed).length;
       result.completionRates[userId] = ((completed / userTodos.length) * 100).toFixed(1);
     });
 
@@ -151,7 +141,7 @@ const Analytics = React.memo(({
           <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-center">
             <CheckSquare className="h-5 w-5 mx-auto text-orange-600 mb-1" />
             <div className="text-2xl font-bold">
-              {todos?.filter((t: any) => t.completed).length || 0}
+              {todos?.filter((t: Todo) => t.completed).length || 0}
             </div>
             <div className="text-xs text-muted-foreground">Completed Todos</div>
           </div>
@@ -188,7 +178,7 @@ const Analytics = React.memo(({
                   dataKey="value"
                   label
                 >
-                  {(stats.todoChartData || []).map((_: any, index: number) => (
+                  {(stats.todoChartData || []).map((_, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -212,7 +202,7 @@ const Analytics = React.memo(({
               </tr>
             </thead>
             <tbody>
-              {(stats.userActivity || []).map((user: any, i: number) => (
+              {(stats.userActivity || []).map((user, i: number) => (
                 <tr key={i} className="border-t">
                   <td className="p-2">{user.name}</td>
                   <td className="p-2 text-center">{user.postCount}</td>

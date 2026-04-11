@@ -3,11 +3,7 @@ import * as mathjs from 'mathjs';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Calculator } from 'lucide-react';
-
-interface MathPlaygroundProps {
-  counter: number;
-  theme: string;
-}
+import { MathPlaygroundProps } from '@/lib/types';
 
 const MathPlaygroundComponent = ({ counter, theme }: MathPlaygroundProps) => {
   const [matrix, setMatrix] = useState<number[][]>([]);

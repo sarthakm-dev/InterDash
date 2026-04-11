@@ -3,17 +3,9 @@ import { Chart, registerables } from 'chart.js';
 import _ from 'lodash';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { BarChart3 } from 'lucide-react';
+import type { DataChartProps, Todo } from '@/lib/types';
 
 Chart.register(...registerables);
-
-interface DataChartProps {
-  posts: any[];
-  users: any[];
-  todos: any[];
-  comments: any[];
-  theme: string;
-  counter: number;
-}
 
 const arePropsEqual = (prev: DataChartProps, next: DataChartProps) =>
   prev.posts.length    === next.posts.length    &&
@@ -73,8 +65,8 @@ const DataChart = React.memo(({ posts, users, todos, comments, theme, counter }:
 
     chartInstance2.current?.destroy();
 
-    const completed = todos.filter((t: any) => t.completed).length;
-    const pending = todos.filter((t: any) => !t.completed).length;
+    const completed = todos.filter((t: Todo) => t.completed).length;
+    const pending = todos.filter((t: Todo) => !t.completed).length;
 
     const ctx = chartRef2.current.getContext('2d')!;
 

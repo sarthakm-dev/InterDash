@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
-import { SortOrder, DashboardPostsTabProps } from '../../lib/types';
+import { SortOrder, DashboardPostsTabProps, Post } from '../../lib/types';
 
 const DashboardPostsTab = ({
   filterText,
@@ -47,7 +47,7 @@ const DashboardPostsTab = ({
       </div>
 
       <div className="space-y-2">
-        {paginatedPosts.map((post: any) => (
+        {paginatedPosts.map((post: Post) => (
           <Card key={post.id}>
             <CardContent className="p-3">
               <h4 className="font-semibold text-sm">{post.title}</h4>

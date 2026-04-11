@@ -1,56 +1,50 @@
-import React, {
-  useState,
-  useEffect,
-  createContext,
-  useRef,
-  Suspense,
-  lazy,
-  useCallback,
-  useMemo,
-  use,
-} from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect, createContext, useRef, Suspense, lazy, useCallback, useMemo, use } from 'react'
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import type { AppContextValue, AppDataShape, AppNotification, AppUser, ErrorLogEntry, NotificationFetchParams, Toast } from './lib/types'
 
-const Dashboard = lazy(() => import('./components/Dashboard'));
-const Header = lazy(() => import('./components/Header'));
-const CryptoTracker = lazy(() => import('./components/CryptoTracker'));
-const WeatherWidget = lazy(() => import('./components/WeatherWidget'));
-const UserList = lazy(() => import('./components/UserList'));
-const PostsFeed = lazy(() => import('./components/PostsFeed'));
-const TodoList = lazy(() => import('./components/TodoList'));
-const DataChart = lazy(() => import('./components/DataChart'));
-const ImageGallery = lazy(() => import('./components/ImageGallery'));
-const MarkdownEditor = lazy(() => import('./components/MarkdownEditor'));
-const Analytics = lazy(() => import('./components/Analytics'));
-const SearchFilter = lazy(() => import('./components/SearchFilter'));
-const Footer = lazy(() => import('./components/Footer'));
-const ThreeScene = lazy(() => import('./components/ThreeScene'));
-const ReportGenerator = lazy(() => import('./components/ReportGenerator'));
-const D3Visualization = lazy(() => import('./components/D3Visualization'));
-const MathPlayground = lazy(() => import('./components/MathPlayground'));
 
-export const AppContext = createContext<any>({});
+const Dashboard = lazy(() => import('./components/Dashboard'))
+const Header = lazy(() => import('./components/Header'))
+const CryptoTracker = lazy(() => import('./components/CryptoTracker'))
+const WeatherWidget = lazy(() => import('./components/WeatherWidget'))
+const UserList = lazy(() => import('./components/UserList'))
+const PostsFeed = lazy(() => import('./components/PostsFeed'))
+const TodoList = lazy(() => import('./components/TodoList'))
+const DataChart = lazy(() => import('./components/DataChart'))
+const ImageGallery = lazy(() => import('./components/ImageGallery'))
+const MarkdownEditor = lazy(() => import('./components/MarkdownEditor'))
+const Analytics = lazy(() => import('./components/Analytics'))
+const SearchFilter = lazy(() => import('./components/SearchFilter'))
+const Footer = lazy(() => import('./components/Footer'))
+const ThreeScene = lazy(() => import('./components/ThreeScene'))
+const ReportGenerator = lazy(() => import('./components/ReportGenerator'))
+const D3Visualization = lazy(() => import('./components/D3Visualization'))
+const MathPlayground = lazy(() => import('./components/MathPlayground'))
 
-interface Toast {
-  id: number;
-  message: string;
-  type: 'info' | 'success' | 'error';
-}
+export const AppContext = createContext<AppContextValue>({
+  theme: 'light',
+  user: null,
+  notifications: [],
+  counter: 0,
+  sidebarOpen: true,
+  globalSearchQuery: '',
+  handleThemeToggle: () => { },
+  setUser: () => { },
+  setGlobalSearchQuery: () => { },
+  addToast: () => { }
+})
 
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; errorLog: any[] }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false, errorLog: [] };
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, errorLog: ErrorLogEntry[] }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false, errorLog: [] }
   }
   static getDerivedStateFromError() {
     return { hasError: true };
   }
-  componentDidCatch(error: any, errorInfo: any) {
-    console.log('Error caught:', error);
-    this.setState((prev) => ({
+  componentDidCatch(error: Error) {
+    console.log('Error caught:', error)
+    this.setState(prev => ({
       ...prev,
       errorLog: [...prev.errorLog, { error: error.toString(), time: Date.now() }],
     }));
@@ -73,11 +67,11 @@ const PageFallback = () => (
 
 function App() {
   const [theme, setTheme] = useState('light');
-  const [user, setUser] = useState<any>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [appData, setAppData] = useState<any>({});
+  const [appData, setAppData] = useState<AppDataShape>({});
   const [counter, setCounter] = useState(0);
   const [routeHistory, setRouteHistory] = useState<string[]>([]);
   const [debugMode, setDebugMode] = useState(false);
@@ -190,7 +184,7 @@ function App() {
     setRouteHistory((prev) => [...prev, path]);
   }, []);
 
-  const fetchNotifications = useCallback(async (params: any) => {
+  const fetchNotifications = useCallback(async (_params: NotificationFetchParams) => {
     try {
       const res = await fetch('https://jsonplaceholder.typicode.com/comments?_limit=5');
       const data = await res.json();
@@ -205,7 +199,7 @@ function App() {
     document.documentElement.classList.toggle('dark');
   }, []);
 
-  const getFilteredData = useCallback((data: any[], query: string) => {
+  const getFilteredData = useCallback((data: unknown[], _query: string) => {
     console.log('filtering data...', Date.now());
     const result: number[] = [];
     for (let i = 0; i < 10000; i++) {

@@ -1,20 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { ImageIcon } from 'lucide-react'
 import { API_ENDPOINTS } from '../utils/constants';
-
-interface Photo {
-  id: number;
-  thumbnailUrl: string;
-  url: string;
-  title: string;
-}
-
-interface ImageGalleryProps {
-  photos?: Photo[];
-  theme: string;
-  counter: number;
-}
+import { ImageGalleryProps, Photo } from '@/lib/types'
 
 const ImageGalleryComponent = ({ photos: propPhotos }: ImageGalleryProps) => {
   const [photos, setPhotos] = useState<Photo[]>([]);

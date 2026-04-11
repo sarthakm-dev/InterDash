@@ -4,18 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Search } from 'lucide-react';
-
-interface SearchFilterProps {
-  data: any[];
-  onFilter?: (result: any[]) => void;
-  theme: string;
-  counter: number;
-}
+import type { SearchFilterProps, SearchableItem, SearchHistoryEntry } from '@/lib/types';
 
 const SearchFilterComponent = ({ data, onFilter, theme, counter }: SearchFilterProps) => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [searchHistory, setSearchHistory] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchableItem[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryEntry[]>([]);
   const [displayValue, setDisplayValue] = useState('');
 
   
@@ -37,7 +31,7 @@ const SearchFilterComponent = ({ data, onFilter, theme, counter }: SearchFilterP
     if (query) {
       const lower = query.toLowerCase();
 
-      const filtered = (data || []).filter((item: any) => {
+      const filtered = (data || []).filter((item: SearchableItem) => {
         const str = JSON.stringify(item).toLowerCase();
         return str.includes(lower);
       });
@@ -65,7 +59,7 @@ const SearchFilterComponent = ({ data, onFilter, theme, counter }: SearchFilterP
         const safeQuery = regexHelper(q);
         const regex = new RegExp(safeQuery, 'i');
 
-        return (data || []).filter((item: any) =>
+        return (data || []).filter((item: SearchableItem) =>
           regex.test(JSON.stringify(item))
         );
       } catch {
@@ -137,7 +131,7 @@ const SearchFilterComponent = ({ data, onFilter, theme, counter }: SearchFilterP
         </div>
 
         <div className="max-h-[300px] overflow-auto mt-2">
-          {results.slice(0, 50).map((item: any, index: number) => {
+          {results.slice(0, 50).map((item: SearchableItem, index: number) => {
             const text =
               item.title ||
               item.name ||

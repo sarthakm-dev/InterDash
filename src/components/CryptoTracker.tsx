@@ -7,16 +7,10 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Star, TrendingUp, TrendingDown } from 'lucide-react';
 import { API_ENDPOINTS } from '../utils/constants';
-
-interface CryptoTrackerProps {
-  theme: string;
-  counter: number;
-  data?: any[];
-  onSelect?: (item: any) => void;
-}
+import type { CryptoData, CryptoTrackerProps } from '@/lib/types';
 
 const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) => {
-  const [coins, setCoins] = useState<any[]>(data || []);  // <- added
+  const [coins, setCoins] = useState<CryptoData[]>(data || []);  // <- added
   const [sortBy, setSortBy] = useState('market_cap');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [search, setSearch] = useState('');
@@ -28,17 +22,17 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
     fetch(`${API_ENDPOINTS.crypto}?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setCoins(d); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
-  const toggleFavorite = (coin: any) => {
+  const toggleFavorite = (coin: CryptoData) => {
     setFavorites((prev) =>
       prev.includes(coin.id) ? prev.filter((id) => id !== coin.id) : [...prev, coin.id],
     );
   };
 
   const sortedPrices = _.orderBy(
-    (coins || []).filter((p: any) => p.name?.toLowerCase().includes(search.toLowerCase())),
+    (coins || []).filter((p: CryptoData) => p.name?.toLowerCase().includes(search.toLowerCase())),
     [sortBy],
     [sortDir],
   );
@@ -77,14 +71,14 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
             <thead>
               <tr className="border-b">
                 <th>
-                <button
-                  className="text-left p-2 cursor-pointer"
-                  onClick={() => {
-                    setSortBy('name');
-                    setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-                  }}
-                >
-                  Name
+                  <button
+                    className="text-left p-2 cursor-pointer"
+                    onClick={() => {
+                      setSortBy('name');
+                      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Name
                   </button>
                 </th>
                 <th
@@ -101,7 +95,7 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
               </tr>
             </thead>
             <tbody>
-              {sortedPrices.map((coin: any, index: number) => (
+              {sortedPrices.map((coin: CryptoData, index: number) => (
                 <tr
                   key={index}
                   className="border-b hover:bg-muted/50 cursor-pointer"

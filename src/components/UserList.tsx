@@ -4,15 +4,7 @@ import _ from 'lodash';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Users, Mail, Building, Phone, Globe, Info } from 'lucide-react';
 import { API_ENDPOINTS } from '../utils/constants';
-
-interface UserListProps {
-  theme: string;
-  counter: number;
-  users?: any[];
-  posts?: any[];
-  globalSearchQuery?: string;
-  onUserClick?: (user: any) => void;
-}
+import type { DetailedUser, Post, UserListProps } from '@/lib/types';
 
 const UserListComponent = ({
   users: propUsers,
@@ -20,8 +12,8 @@ const UserListComponent = ({
   globalSearchQuery,
   onUserClick,
 }: UserListProps) => {
-  const [users, setUsers] = useState<any[]>(propUsers || []);
-  const [posts, setPosts] = useState<any[]>(propPosts || []);
+  const [users, setUsers] = useState<DetailedUser[]>(propUsers || []);
+  const [posts, setPosts] = useState<Post[]>(propPosts || []);
   const [sortField, setSortField] = useState('name');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [hoveredUserId, setHoveredUserId] = useState<number | null>(null);
@@ -48,7 +40,7 @@ const UserListComponent = ({
     if (!globalSearchQuery) return users;
     const q = globalSearchQuery.toLowerCase();
 
-    return users.filter((u: any) =>
+    return users.filter((u: DetailedUser) =>
       u.name.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
       u.company?.name?.toLowerCase().includes(q)
@@ -133,7 +125,7 @@ const UserListComponent = ({
 
       <CardContent>
         <div className="max-h-[400px] overflow-auto space-y-2">
-          {sorted.map((user: any) => (
+          {sorted.map((user: DetailedUser) => (
             <button
               key={user.id}
               className={`relative w-full text-left p-3 border rounded-lg ${
