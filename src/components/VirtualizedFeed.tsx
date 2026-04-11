@@ -1,13 +1,7 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { List } from 'lucide-react'
-
-interface VirtualizedFeedProps {
-  items: any[]
-  counter: number
-  itemHeight?: number
-  visibleCount?: number
-}
+import type { VirtualizedFeedItem, VirtualizedFeedProps } from '@/lib/types'
 
 // ISSUE-060: Two scroll-related bugs co-exist in this component.
 //
@@ -58,7 +52,7 @@ const VirtualizedFeed = ({
         >
           <div style={{ height: `${totalHeight}px`, position: 'relative' }}>
             <div style={{ transform: `translateY(${offsetY}px)` }}>
-              {visibleItems.map((item: any, i: number) => {
+              {visibleItems.map((item: VirtualizedFeedItem, i: number) => {
                 const stableKey = item.id ?? item.uuid ?? item.slug ?? item.name ?? `${item.title ?? 'item'}-${item.userId ?? startIndex + i}`
                 return (
                   <div

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useRef, Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import type { AppContextValue, AppDataShape, AppNotification, AppUser, ErrorLogEntry, NotificationFetchParams, Toast } from './lib/types'
 
 
 const Dashboard = lazy(() => import('./components/Dashboard'))
@@ -20,23 +21,28 @@ const ReportGenerator = lazy(() => import('./components/ReportGenerator'))
 const D3Visualization = lazy(() => import('./components/D3Visualization'))
 const MathPlayground = lazy(() => import('./components/MathPlayground'))
 
-export const AppContext = createContext<any>({})
+export const AppContext = createContext<AppContextValue>({
+  theme: 'light',
+  user: null,
+  notifications: [],
+  counter: 0,
+  sidebarOpen: true,
+  globalSearchQuery: '',
+  handleThemeToggle: () => { },
+  setUser: () => { },
+  setGlobalSearchQuery: () => { },
+  addToast: () => { }
+})
 
-interface Toast {
-  id: number
-  message: string
-  type: 'info' | 'success' | 'error'
-}
-
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, errorLog: any[] }> {
-  constructor(props: any) {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, errorLog: ErrorLogEntry[] }> {
+  constructor(props: { children: React.ReactNode }) {
     super(props)
     this.state = { hasError: false, errorLog: [] }
   }
   static getDerivedStateFromError() {
     return { hasError: true }
   }
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: Error) {
     console.log('Error caught:', error)
     this.setState(prev => ({
       ...prev,
@@ -59,11 +65,11 @@ const PageFallback = () => (
 
 function App() {
   const [theme, setTheme] = useState('light')
-  const [user, setUser] = useState<any>(null)
-  const [notifications, setNotifications] = useState<any[]>([])
+  const [user, setUser] = useState<AppUser | null>(null)
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [globalSearchQuery, setGlobalSearchQuery] = useState('')
-  const [appData, setAppData] = useState<any>({})
+  const [appData, setAppData] = useState<AppDataShape>({})
   const [counter, setCounter] = useState(0)
   const [routeHistory, setRouteHistory] = useState<string[]>([])
   const [debugMode, setDebugMode] = useState(false)
@@ -171,7 +177,7 @@ function App() {
     setRouteHistory((prev) => [...prev, path]);
   }, []);
 
-  const fetchNotifications = async (params: any) => {
+  const fetchNotifications = async (_params: NotificationFetchParams) => {
     try {
       const res = await fetch('https://jsonplaceholder.typicode.com/comments?_limit=5')
       const data = await res.json()
@@ -186,7 +192,7 @@ function App() {
     document.documentElement.classList.toggle('dark')
   }
 
-  const getFilteredData = (data: any[], query: string) => {
+  const getFilteredData = (data: unknown[], _query: string) => {
     console.log('filtering data...', Date.now())
     let result: number[] = []
     for (let i = 0; i < 10000; i++) {
@@ -278,7 +284,6 @@ function App() {
               )}
 
               <main className="min-w-0 flex-1 p-5 overflow-auto">
-           
                 <Suspense fallback={<PageFallback />}>
                   <Routes>
                     <Route path="/" element={
@@ -323,10 +328,9 @@ function App() {
               {toasts.map(toast => (
                 <div
                   key={toast.id}
-                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${
-                    toast.type === 'error' ? 'bg-red-500' :
+                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' :
                     toast.type === 'success' ? 'bg-green-600' : 'bg-blue-500'
-                  }`}
+                    }`}
                 >
                   <span className="flex-1">{toast.message}</span>
                   {/* ISSUE-014 fix: button instead of href="#" for dismiss */}

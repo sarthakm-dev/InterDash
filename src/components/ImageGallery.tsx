@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { ImageIcon } from 'lucide-react'
-
-interface Photo {
-  id: number
-  thumbnailUrl: string
-  url: string
-  title: string
-}
-
-interface ImageGalleryProps {
-  photos?: any[]
-  theme: string
-  counter: number
-}
+import { ImageGalleryProps, Photo } from '@/lib/types'
 
 // picsum.photos gives real images — jsonplaceholder URLs point to
 // via.placeholder.com which is frequently blocked/broken

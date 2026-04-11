@@ -4,18 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Search } from 'lucide-react';
-
-interface SearchFilterProps {
-  data: any[];
-  onFilter?: (result: any[]) => void;
-  theme: string;
-  counter: number;
-}
+import type { SearchFilterProps, SearchableItem, SearchHistoryEntry } from '@/lib/types';
 
 const SearchFilter = ({ data, onFilter, theme, counter }: SearchFilterProps) => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [searchHistory, setSearchHistory] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchableItem[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryEntry[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   // ISSUE-058: displayValue controls the input's visible text.
@@ -25,20 +19,20 @@ const SearchFilter = ({ data, onFilter, theme, counter }: SearchFilterProps) => 
   // prop to the DOM input element, which resets the cursor to the end of the
   // string — even if the user was typing in the middle of the text.
   const [displayValue, setDisplayValue] = useState('');
-  const regexHelper=(str:string)=>{
+  const regexHelper = (str: string) => {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   useEffect(() => {
     const handler = setTimeout(() => {
-      setQuery(displayValue) 
-    }, 300) 
+      setQuery(displayValue)
+    }, 300)
 
-    return () => clearTimeout(handler) 
+    return () => clearTimeout(handler)
   }, [displayValue])
 
   useEffect(() => {
     if (query) {
-      const filtered = (data || []).filter((item: any) => {
+      const filtered = (data || []).filter((item: SearchableItem) => {
         const str = JSON.stringify(item).toLowerCase();
         return str.includes(query.toLowerCase());
       });
@@ -60,9 +54,9 @@ const SearchFilter = ({ data, onFilter, theme, counter }: SearchFilterProps) => 
 
   const regexSearch = (q: string) => {
     try {
-      const safeQuery=regexHelper(q);
+      const safeQuery = regexHelper(q);
       const regex = new RegExp(safeQuery, 'i');
-      return (data || []).filter((item: any) => regex.test(JSON.stringify(item)));
+      return (data || []).filter((item: SearchableItem) => regex.test(JSON.stringify(item)));
     } catch (e) {
       return [];
     }
@@ -100,7 +94,7 @@ const SearchFilter = ({ data, onFilter, theme, counter }: SearchFilterProps) => 
           )}
         </div>
         <div className="max-h-[300px] overflow-auto mt-2">
-          {results.slice(0, 50).map((item: any, index: number) => (
+          {results.slice(0, 50).map((item: SearchableItem, index: number) => (
             <div
               key={index}
               className="px-2 py-1.5 border-b border-gray-100 text-xs hover:bg-muted/50"

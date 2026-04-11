@@ -4,6 +4,7 @@ import moment from 'moment';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Activity, BarChart, Users, FileText, CheckSquare, Image } from 'lucide-react';
+import type { AnalyticsProps, AnalyticsStats, Todo } from '@/lib/types';
 
 import {
   BarChart as ReBarChart,
@@ -21,17 +22,6 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
-
-interface AnalyticsProps {
-  posts: any[];
-  users: any[];
-  todos: any[];
-  comments: any[];
-  albums: any[];
-  photos: any[];
-  theme: string;
-  counter: number;
-}
 
 const COLORS = [
   '#0088FE',
@@ -56,26 +46,26 @@ const Analytics = ({
   theme,
   counter,
 }: AnalyticsProps) => {
-  const [stats, setStats] = useState<any>({});
+  const [stats, setStats] = useState<Partial<AnalyticsStats>>({});
   const [calculating, setCalculating] = useState(false);
 
   useEffect(() => {
     setCalculating(true);
 
     const calculateStats = () => {
-      const result: any = {};
+      const result: Partial<AnalyticsStats> = {};
 
       result.postsPerUser = _.countBy(posts, 'userId');
       result.commentsPerPost = _.countBy(comments, 'postId');
-      result.avgWordCount = _.meanBy(posts, (p: any) => p.body?.split(' ').length || 0);
+      result.avgWordCount = _.meanBy(posts, (p) => p.body?.split(' ').length || 0);
 
       const postsByUser = _.groupBy(posts, 'userId');
       const todosByUser = _.groupBy(todos, 'userId');
       const albumsByUser = _.groupBy(albums, 'userId');
 
       result.completionRates = {} as Record<string, string>;
-      Object.entries(todosByUser).forEach(([userId, userTodos]: [string, any[]]) => {
-        const completed = userTodos.filter((t: any) => t.completed).length;
+      Object.entries(todosByUser).forEach(([userId, userTodos]) => {
+        const completed = userTodos.filter((t: Todo) => t.completed).length;
         result.completionRates[userId] = ((completed / userTodos.length) * 100).toFixed(1);
       });
 
@@ -105,7 +95,7 @@ const Analytics = ({
         };
       });
 
-    
+
 
       // Prepare recharts data
       result.postsChartData = Object.entries(result.postsPerUser).map(([userId, count]) => ({
@@ -129,7 +119,7 @@ const Analytics = ({
       return result;
     };
 
-    
+
     const result = calculateStats();
     setStats(result);
     setCalculating(false);
@@ -161,7 +151,7 @@ const Analytics = ({
           <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-center">
             <CheckSquare className="h-5 w-5 mx-auto text-orange-600 mb-1" />
             <div className="text-2xl font-bold">
-              {todos?.filter((t: any) => t.completed).length || 0}
+              {todos?.filter((t: Todo) => t.completed).length || 0}
             </div>
             <div className="text-xs text-muted-foreground">Completed Todos</div>
           </div>
@@ -198,7 +188,7 @@ const Analytics = ({
                   dataKey="value"
                   label
                 >
-                  {(stats.todoChartData || []).map((_: any, index: number) => (
+                  {(stats.todoChartData || []).map((_, index: number) => (
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -222,7 +212,7 @@ const Analytics = ({
               </tr>
             </thead>
             <tbody>
-              {(stats.userActivity || []).map((user: any, i: number) => (
+              {(stats.userActivity || []).map((user, i: number) => (
                 <tr key={i} className="border-t">
                   <td className="p-2">{user.name}</td>
                   <td className="p-2 text-center">{user.postCount}</td>

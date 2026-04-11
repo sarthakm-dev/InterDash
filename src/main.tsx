@@ -8,7 +8,7 @@ window.onerror = (msg, src, line, col, err) => {
 };
 
 const _originalError = console.error;
-console.error = (...args: any[]) => {
+console.error = (...args: unknown[]) => {
   _originalError.apply(console, args);
   try {
     //added the error log for last 50 entries

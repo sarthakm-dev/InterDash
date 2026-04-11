@@ -1,12 +1,22 @@
 import React from 'react';
 
 export type SortOrder = 'asc' | 'desc';
+export type ToastType = 'info' | 'success' | 'error';
 
 export interface User {
   id: number;
   name?: string;
   username?: string;
   email?: string;
+  [key: string]: unknown;
+}
+
+export interface AppUser {
+  id?: number;
+  name?: string;
+  username?: string;
+  email?: string;
+  token?: string;
   [key: string]: unknown;
 }
 
@@ -35,6 +45,263 @@ export interface Comment {
   [key: string]: unknown;
 }
 
+export interface AppNotification {
+  id: number;
+  email?: string;
+  body?: string;
+  [key: string]: unknown;
+}
+
+export interface AppDataShape {
+  [key: string]: unknown;
+}
+
+export interface ErrorLogEntry {
+  error: string;
+  time: number;
+}
+
+export interface Toast {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+
+export interface NotificationFetchParams {
+  userId?: number;
+  theme: string;
+}
+
+export interface AppContextValue {
+  theme: string;
+  user: AppUser | null;
+  notifications: AppNotification[];
+  counter: number;
+  sidebarOpen: boolean;
+  globalSearchQuery: string;
+  handleThemeToggle: () => void;
+  setUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
+  setGlobalSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  addToast: (message: string, type?: ToastType) => void;
+}
+
+export interface HeaderSearchResult {
+  id?: number;
+  title?: string;
+  body?: string;
+  [key: string]: unknown;
+}
+
+export interface HeaderProps {
+  theme: string;
+  onThemeToggle: () => void;
+  user: AppUser | null;
+  setUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
+  notifications: AppNotification[];
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  globalSearchQuery: string;
+  setGlobalSearchQuery: (q: string) => void;
+  counter: number;
+}
+
+export interface FooterProps {
+  theme: string;
+  counter: number;
+  notifications: AppNotification[];
+}
+
+export interface SearchableItem {
+  id?: number;
+  title?: string;
+  name?: string;
+  body?: string;
+  [key: string]: unknown;
+}
+
+export interface SearchHistoryEntry {
+  query: string;
+  resultCount: number;
+  time: number;
+}
+
+export interface SearchFilterProps {
+  data: SearchableItem[];
+  onFilter?: (result: SearchableItem[]) => void;
+  theme: string;
+  counter: number;
+}
+
+export interface CryptoTrackerProps {
+  theme: string;
+  counter: number;
+  data?: CryptoData[];
+  onSelect?: (item: CryptoData) => void;
+}
+
+export interface WeatherCurrent {
+  temperature?: number;
+  windspeed?: number;
+  weathercode?: number;
+  [key: string]: unknown;
+}
+
+export interface WeatherHourly {
+  time?: string[];
+  temperature_2m?: number[];
+  relative_humidity_2m?: number[];
+  wind_speed_10m?: number[];
+  [key: string]: unknown;
+}
+
+export interface WeatherCityData {
+  name: string;
+  lat: number;
+  lon: number;
+  weather?: WeatherCurrent;
+  hourly?: WeatherHourly;
+  [key: string]: unknown;
+}
+
+export interface WeatherWidgetProps {
+  theme: string;
+  counter: number;
+  data?: WeatherCityData[];
+  onCityClick?: (city: WeatherCityData) => void;
+}
+
+export interface UserAddressGeo {
+  lat?: string;
+  lng?: string;
+}
+
+export interface UserAddress {
+  street?: string;
+  suite?: string;
+  city?: string;
+  zipcode?: string;
+  geo?: UserAddressGeo;
+}
+
+export interface UserCompany {
+  name?: string;
+  catchPhrase?: string;
+  bs?: string;
+}
+
+export interface DetailedUser extends User {
+  phone?: string;
+  website?: string;
+  address?: UserAddress;
+  company?: UserCompany;
+}
+
+export interface UserListProps {
+  theme: string;
+  counter: number;
+  users?: DetailedUser[];
+  posts?: Post[];
+  globalSearchQuery?: string;
+  onUserClick?: (user: DetailedUser) => void;
+}
+
+export interface PostsFeedProps {
+  theme: string;
+  counter: number;
+  posts?: Post[];
+  comments?: Record<number, Comment[]>;
+  onPostClick?: (post: Post) => void;
+}
+
+export interface ImageGalleryProps {
+  photos?: Photo[];
+  theme: string;
+  counter: number;
+}
+
+export interface AnalyticsUserActivity extends DetailedUser {
+  postCount: number;
+  todoCount: number;
+  albumCount: number;
+}
+
+export interface AnalyticsStats {
+  postsPerUser: Record<string, number>;
+  commentsPerPost: Record<string, number>;
+  avgWordCount: number;
+  completionRates: Record<string, string>;
+  userActivity: AnalyticsUserActivity[];
+  postsChartData: Array<{ name: string; posts: number }>;
+  todoChartData: Array<{ name: string; value: number }>;
+  commentAuthors: Array<Comment & { postAuthor?: string; postTitle?: string }>;
+}
+
+export interface AnalyticsProps {
+  posts: Post[];
+  users: DetailedUser[];
+  todos: Todo[];
+  comments: Comment[];
+  albums: Album[];
+  photos: Photo[];
+  theme: string;
+  counter: number;
+}
+
+export interface DataChartProps {
+  posts: Post[];
+  users: DetailedUser[];
+  todos: Todo[];
+  comments: Comment[];
+  theme: string;
+  counter: number;
+}
+
+export interface FakeReportRecord {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  company: string;
+  department: string;
+  jobTitle: string;
+  salary: number;
+  startDate: string;
+  address: string;
+  city: string;
+  country: string;
+  bio: string;
+}
+
+export interface ReportGeneratorProps {
+  posts: Post[];
+  users: DetailedUser[];
+  counter: number;
+  theme: string;
+}
+
+export interface VirtualizedFeedItem {
+  id?: number | string;
+  uuid?: string;
+  slug?: string;
+  name?: string;
+  title?: string;
+  userId?: number;
+  [key: string]: unknown;
+}
+
+export interface VirtualizedFeedProps {
+  items: VirtualizedFeedItem[];
+  counter: number;
+  itemHeight?: number;
+  visibleCount?: number;
+}
+
+export interface MathPlaygroundProps {
+  counter: number;
+  theme: string;
+}
+
 export interface Album {
   id: number;
   userId?: number;
@@ -43,19 +310,20 @@ export interface Album {
 }
 
 export interface Photo {
-  id: number;
-  albumId?: number;
-  title?: string;
-  url?: string;
-  thumbnailUrl?: string;
-  [key: string]: unknown;
+  id: number
+  thumbnailUrl: string
+  url: string
+  title: string
 }
 
 export interface CryptoData {
   id: string;
   symbol: string;
   name: string;
+  image?: string;
   current_price?: number;
+  market_cap?: number;
+  price_change_percentage_24h?: number;
   [key: string]: unknown;
 }
 
@@ -68,7 +336,7 @@ export interface WeatherData {
 
 export interface DashboardProps {
   theme: string;
-  user: User;
+  user: AppUser | null;
   notifications: unknown[];
   globalSearchQuery: string;
   setGlobalSearchQuery: (q: string) => void;
@@ -77,7 +345,7 @@ export interface DashboardProps {
   appData: unknown;
   setAppData: (data: unknown) => void;
   handleThemeToggle: () => void;
-  counter:number;
+  counter: number;
 }
 
 export interface DashboardModalProps {

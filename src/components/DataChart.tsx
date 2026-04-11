@@ -3,17 +3,9 @@ import { Chart, registerables } from 'chart.js';
 import _ from 'lodash';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { BarChart3 } from 'lucide-react';
+import type { DataChartProps, Todo } from '@/lib/types';
 
 Chart.register(...registerables);
-
-interface DataChartProps {
-  posts: any[];
-  users: any[];
-  todos: any[];
-  comments: any[];
-  theme: string;
-  counter: number;
-}
 
 const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartProps) => {
   const chartRef1 = useRef<HTMLCanvasElement>(null);
@@ -29,7 +21,7 @@ const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartP
   useEffect(() => {
     if (!chartRef1.current || posts.length === 0) return;
 
-  
+
     chartInstance1.current?.destroy();
 
     const postsPerUser = _.countBy(posts, 'userId');
@@ -68,8 +60,8 @@ const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartP
 
     chartInstance2.current?.destroy();
 
-    const completed = todos.filter((t: any) => t.completed).length;
-    const pending = todos.filter((t: any) => !t.completed).length;
+    const completed = todos.filter((t: Todo) => t.completed).length;
+    const pending = todos.filter((t: Todo) => !t.completed).length;
 
     const ctx = chartRef2.current.getContext('2d')!;
 
@@ -92,7 +84,7 @@ const DataChart = ({ posts, users, todos, comments, theme, counter }: DataChartP
     };
   }, [todos, counter]);
 
- 
+
   useEffect(() => {
     if (!chartRef3.current || comments.length === 0) return;
 

@@ -3,16 +3,10 @@ import moment from 'moment';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Cloud, Thermometer, Wind } from 'lucide-react';
-
-interface WeatherWidgetProps {
-  theme: string;
-  counter: number;
-  data?: any[];
-  onCityClick?: (city: any) => void;
-}
+import type { WeatherCityData, WeatherWidgetProps } from '@/lib/types';
 
 const WeatherWidget = ({ theme, counter, data, onCityClick }: WeatherWidgetProps) => {
-  const [weatherData, setWeatherData] = useState<any[]>([]);
+  const [weatherData, setWeatherData] = useState<WeatherCityData[]>([]);
   const [unit, setUnit] = useState('celsius');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -29,7 +23,7 @@ const WeatherWidget = ({ theme, counter, data, onCityClick }: WeatherWidgetProps
     ];
 
     const fetchAll = async () => {
-      const results: any[] = [];
+      const results: WeatherCityData[] = [];
       for (const city of cities) {
         try {
           const res = await fetch(
@@ -37,7 +31,7 @@ const WeatherWidget = ({ theme, counter, data, onCityClick }: WeatherWidgetProps
           );
           const data = await res.json();
           results.push({ ...city, weather: data.current_weather, hourly: data.hourly });
-        } catch (e) {}
+        } catch (e) { }
       }
       setWeatherData(results);
     };
@@ -102,7 +96,7 @@ const WeatherWidget = ({ theme, counter, data, onCityClick }: WeatherWidgetProps
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-3">
-          {weatherData.map((city: any, idx: number) => (
+          {weatherData.map((city: WeatherCityData, idx: number) => (
             <button
               key={idx}
               className={`p-3 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${theme === 'dark' ? 'border-gray-600' : 'border-gray-200'}`}

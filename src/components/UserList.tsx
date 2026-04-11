@@ -4,15 +4,7 @@ import _ from 'lodash';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Users, Mail, Building, Phone, Globe, Info } from 'lucide-react';
 import { API_ENDPOINTS } from '../utils/constants';
-
-interface UserListProps {
-  theme: string;
-  counter: number;
-  users?: any[];
-  posts?: any[];
-  globalSearchQuery?: string;
-  onUserClick?: (user: any) => void;
-}
+import type { DetailedUser, Post, UserListProps } from '@/lib/types';
 
 const UserList = ({
   users: propUsers,
@@ -20,8 +12,8 @@ const UserList = ({
   globalSearchQuery,
   onUserClick,
 }: UserListProps) => {
-  const [users, setUsers] = useState<any[]>(propUsers || []);
-  const [posts, setPosts] = useState<any[]>(propPosts || []);
+  const [users, setUsers] = useState<DetailedUser[]>(propUsers || []);
+  const [posts, setPosts] = useState<Post[]>(propPosts || []);
   const [sortField, setSortField] = useState('name');
 
   // ISSUE-056 fix: use stable item id instead of array index
@@ -49,7 +41,7 @@ const UserList = ({
       .catch(() => { });
   }, []);
 
-  const filteredUsers = users.filter((u: any) => {
+  const filteredUsers = users.filter((u: DetailedUser) => {
     if (!globalSearchQuery) return true;
     return (
       u.name.toLowerCase().includes(globalSearchQuery.toLowerCase()) ||
@@ -61,9 +53,9 @@ const UserList = ({
   const sorted = _.sortBy(filteredUsers, [sortField]);
 
 
-  const selectedUser = sorted.find((u: any) => u.id === selectedId) ?? null;
+  const selectedUser = sorted.find((u: DetailedUser) => u.id === selectedId) ?? null;
 
-  
+
   const tooltipRoot = document.getElementById('tooltip-root') || document.body;
 
   return (
@@ -88,12 +80,12 @@ const UserList = ({
       </CardHeader>
       <CardContent>
         <div className="max-h-[400px] overflow-auto space-y-2">
-          {sorted.map((user: any) => (
+          {sorted.map((user: DetailedUser) => (
             <button
               key={user.id}
               className={`relative w-full text-left p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${selectedId === user.id
-                  ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
-                  : 'hover:bg-muted/50'
+                ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
+                : 'hover:bg-muted/50'
                 }`}
               onClick={() => {
                 setSelectedId(user.id);
@@ -180,11 +172,11 @@ const UserList = ({
           <div className="mt-4 p-3 bg-muted/50 rounded-lg">
             <h4 className="font-semibold text-sm mb-2">
               {selectedUser.name}'s Posts (
-              {posts.filter((p: any) => p.userId === selectedUser.id).length})
+              {posts.filter((p: Post) => p.userId === selectedUser.id).length})
             </h4>
             {posts
-              .filter((p: any) => p.userId === selectedUser.id)
-              .map((post: any) => (
+              .filter((p: Post) => p.userId === selectedUser.id)
+              .map((post: Post) => (
                 <div key={post.id} className="py-1.5 border-b border-gray-200 last:border-0">
                   <strong className="text-xs">{post.title}</strong>
                   <p className="text-[11px] text-muted-foreground mt-0.5">

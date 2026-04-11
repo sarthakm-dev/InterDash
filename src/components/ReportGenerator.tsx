@@ -10,17 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Download, FileSpreadsheet, FileText, Archive, Lock } from 'lucide-react';
-
-interface ReportGeneratorProps {
-  posts: any[];
-  users: any[];
-  counter: number;
-  theme: string;
-}
+import type { FakeReportRecord, ReportGeneratorProps } from '@/lib/types';
 
 const ReportGenerator = ({ posts, users, counter, theme }: ReportGeneratorProps) => {
   const [generating, setGenerating] = useState(false);
-  const [fakeData, setFakeData] = useState<any[]>([]);
+  const [fakeData, setFakeData] = useState<FakeReportRecord[]>([]);
   const [encryptedData, setEncryptedData] = useState('');
 
   useEffect(() => {
