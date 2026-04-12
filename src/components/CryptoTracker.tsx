@@ -1,47 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import _ from 'lodash';
-import moment from 'moment';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Star, TrendingUp, TrendingDown } from 'lucide-react';
 import { API_ENDPOINTS } from '../utils/constants';
-
-interface CryptoTrackerProps {
-  theme: string;
-  counter: number;
-  data?: any[];
-  onSelect?: (item: any) => void;
-}
+import type { CryptoData, CryptoTrackerProps } from '@/lib/types';
 
 const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) => {
-  const [coins, setCoins] = useState<any[]>(data || []);  // <- added
+  const [coins, setCoins] = useState<CryptoData[]>(data || []);
   const [sortBy, setSortBy] = useState('market_cap');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [search, setSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  // fetch only when no data passed in                     // <- added
+
   useEffect(() => {
     if (data && data.length > 0) return;
     fetch(`${API_ENDPOINTS.crypto}?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setCoins(d); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
-  const toggleFavorite = (coin: any) => {
+  const toggleFavorite = (coin: CryptoData) => {
     setFavorites((prev) =>
       prev.includes(coin.id) ? prev.filter((id) => id !== coin.id) : [...prev, coin.id],
     );
   };
 
-  const sortedPrices = _.orderBy(
-    (coins || []).filter((p: any) => p.name?.toLowerCase().includes(search.toLowerCase())),
-    [sortBy],
-    [sortDir],
-  );
+  const sortedPrices = (coins || [])
+    .filter((p: CryptoData) => p.name?.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const aVal = (a as any)[sortBy];
+      const bVal = (b as any)[sortBy];
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   const formatPrice = (price: number) => {
     const str = price?.toString() || '0';
@@ -77,14 +74,15 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
             <thead>
               <tr className="border-b">
                 <th>
-                <button
-                  className="text-left p-2 cursor-pointer"
-                  onClick={() => {
-                    setSortBy('name');
-                    setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-                  }}
-                >
-                  Name
+                  <button
+                    aria-label='name'
+                    className="text-left p-2 cursor-pointer"
+                    onClick={() => {
+                      setSortBy('name');
+                      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Name
                   </button>
                 </th>
                 <th
@@ -101,7 +99,7 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
               </tr>
             </thead>
             <tbody>
-              {sortedPrices.map((coin: any, index: number) => (
+              {sortedPrices.map((coin: CryptoData, index: number) => (
                 <tr
                   key={index}
                   className="border-b hover:bg-muted/50 cursor-pointer"
@@ -127,6 +125,7 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
                   </td>
                   <td className="p-2 text-center">
                     <Button
+                      aria-label='star'
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
@@ -146,7 +145,7 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
           </table>
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
-          Last updated: {moment().format('HH:mm:ss')} | Render #{counter}
+          Last updated: {format(new Date(), 'HH:mm:ss')} | Render #{counter}
         </p>
       </CardContent>
     </Card>

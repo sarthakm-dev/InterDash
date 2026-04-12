@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import _ from 'lodash';
-import type { SortOrder, UseDashboardStateOptions } from '../../lib/types';
+import type { SortOrder, UseDashboardStateOptions, Post } from '../../lib/types';
 
 
 
@@ -17,16 +16,16 @@ export const useDashboardState = ({
   const [activeTab, setActiveTab] = useState('overview');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [filterText, setFilterText] = useState('');
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = useState<unknown[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<any>(null);
+  const [modalContent, setModalContent] = useState<unknown>(null);
   const [page, setPage] = useState(1);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const toggleTimeoutsRef = useRef<number[]>([]);
   const itemsPerPage = 10;
 
-  const openModal = useCallback((content: any) => {
+  const openModal = useCallback((content: unknown) => {
     setModalContent(content);
     setModalOpen(true);
   }, []); // setters from useState are stable — no deps needed
@@ -62,7 +61,7 @@ export const useDashboardState = ({
     toggleTimeoutsRef.current.push(timeoutId);
   }, [setTodos]);
 
-  const handleSelectItem = useCallback((item: any) => {
+  const handleSelectItem = useCallback((item: unknown) => {
     setSelectedItems((currentItems) => [...currentItems.slice(-50), item]);
   }, []);
 
@@ -80,21 +79,22 @@ export const useDashboardState = ({
           post.body.toLowerCase().includes(normalizedFilter),
       );
     }
-
-    return _.orderBy(filteredPosts, ['id'], [sortOrder]);
+    return [...filteredPosts].sort((a, b) =>
+      sortOrder === 'asc' ? a.id - b.id : b.id - a.id
+    );
   }, [posts, filterText, sortOrder]);
 
-  const getPaginatedData = useCallback((data: any[]) => {
+  const getPaginatedData = useCallback((data: Post[]) => {
     const start = (page - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     return data.slice(start, end);
   }, [page, itemsPerPage]);
 
-  const totalPages = useCallback((data: any[]) => {
+  const totalPages = useCallback((data: Post[]) => {
     return Math.ceil(data.length / itemsPerPage);
   }, [itemsPerPage]);
 
-  const handleFormChange = useCallback((field: string, value: any) => {
+  const handleFormChange = useCallback((field: string, value: unknown) => {
     setFormData((currentFormData) => ({
       ...currentFormData,
       [field]: value,
@@ -133,6 +133,9 @@ export const useDashboardState = ({
 
     if (isValid) {
       addToast('Profile saved!', 'success');
+
+      setFormData({});
+      setValidationErrors({});
       return;
     }
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
-import { SortOrder, DashboardPostsTabProps } from '../../lib/types';
+import { SortOrder, DashboardPostsTabProps, Post } from '../../lib/types';
 
 const DashboardPostsTab = ({
   filterText,
@@ -30,6 +30,9 @@ const DashboardPostsTab = ({
       )}
 
       <div className="flex gap-2">
+        <label htmlFor='sortOrder' className='sr-only'>
+          Sort Order
+        </label>
         <Input
           value={filterText}
           onChange={(e) => onFilterTextChange(e.target.value)}
@@ -37,6 +40,7 @@ const DashboardPostsTab = ({
           className="max-w-[300px]"
         />
         <select
+          id='sortOrder'
           value={sortOrder}
           onChange={(e) => onSortOrderChange(e.target.value as SortOrder)}
           className="border rounded px-2 py-1 text-sm bg-background"
@@ -47,7 +51,7 @@ const DashboardPostsTab = ({
       </div>
 
       <div className="space-y-2">
-        {paginatedPosts.map((post: any) => (
+        {paginatedPosts.map((post: Post) => (
           <Card key={post.id}>
             <CardContent className="p-3">
               <h4 className="font-semibold text-sm">{post.title}</h4>
@@ -62,6 +66,7 @@ const DashboardPostsTab = ({
 
       <div className="flex items-center gap-2">
         <Button
+          aria-label='prev'
           variant="outline"
           size="sm"
           onClick={() => onPageChange(page - 1)}
@@ -73,6 +78,7 @@ const DashboardPostsTab = ({
           Page {page} of {pageCount}
         </span>
         <Button
+          aria-label='next'
           variant="outline"
           size="sm"
           onClick={() => onPageChange(page + 1)}

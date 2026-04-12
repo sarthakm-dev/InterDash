@@ -1,27 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import moment from 'moment'
+import { formatDistanceToNow, subHours } from 'date-fns'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Heart, MessageCircle, Eye } from 'lucide-react'
 import { Input } from './ui/input'
 import { API_ENDPOINTS, ITEMS_PER_PAGE } from '../utils/constants'
-
-interface PostsFeedProps {
-  theme: string
-  counter: number
-  posts?: any[]
-  comments?: Record<number, any[]>
-  onPostClick?: (post: any) => void
-}
+import type { Comment, Post, PostsFeedProps } from '@/lib/types'
 
 const PostsFeedComponent = ({
   posts: propPosts,
   comments: propComments,
   onPostClick,
 }: PostsFeedProps) => {
-  const [posts, setPosts] = useState<any[]>(propPosts || [])
-  const [comments, setComments] = useState<Record<number, any[]>>(propComments || {})
+  const [posts, setPosts] = useState<Post[]>(propPosts || [])
+  const [comments, setComments] = useState<Record<number, Comment[]>>(propComments || {})
   const [expandedPost, setExpandedPost] = useState<number | null>(null)
   const [likedPosts, setLikedPosts] = useState<Record<number, boolean>>({})
   const [commentDrafts, setCommentDrafts] = useState<Record<number, string>>({})
@@ -33,7 +26,7 @@ const PostsFeedComponent = ({
     fetch(`${API_ENDPOINTS.posts}?_limit=${ITEMS_PER_PAGE}`)
       .then((r) => r.json())
       .then((data) => setPosts(data))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false))
   }, [propPosts])
 
@@ -91,13 +84,13 @@ const PostsFeedComponent = ({
 
   return (
     <div className="max-h-[500px] overflow-auto space-y-3">
-      {posts.slice(0, ITEMS_PER_PAGE).map((post: any) => (
+      {posts.slice(0, ITEMS_PER_PAGE).map((post: Post) => (
         <Card key={post.id} className="overflow-hidden">
           <CardContent className="p-4">
             <div className="flex justify-between items-start">
               <h4 className="font-semibold text-sm flex-1">{post.title}</h4>
               <Badge variant="outline" className="text-[10px] ml-2 shrink-0">
-                {moment().subtract(post.id, 'hours').fromNow()}
+               {formatDistanceToNow(subHours(new Date(), post.id), { addSuffix: true })}
               </Badge>
             </div>
 
@@ -148,8 +141,7 @@ const PostsFeedComponent = ({
                     Loading comments...
                   </p>
                 )}
-
-                {(comments[post.id] || []).map((comment: any) => (
+                {(comments[post.id] || []).map((comment: Comment) => (
                   <div key={comment.id} className="p-2 bg-muted/50 rounded text-xs">
                     <strong>{comment.name}</strong>{' '}
                     <span className="text-muted-foreground">

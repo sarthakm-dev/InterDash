@@ -1,18 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
-import _ from 'lodash';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Users, Mail, Building, Phone, Globe, Info } from 'lucide-react';
 import { API_ENDPOINTS } from '../utils/constants';
-
-interface UserListProps {
-  theme: string;
-  counter: number;
-  users?: any[];
-  posts?: any[];
-  globalSearchQuery?: string;
-  onUserClick?: (user: any) => void;
-}
+import type { DetailedUser, Post, UserListProps } from '@/lib/types';
 
 const UserListComponent = ({
   users: propUsers,
@@ -20,8 +11,8 @@ const UserListComponent = ({
   globalSearchQuery,
   onUserClick,
 }: UserListProps) => {
-  const [users, setUsers] = useState<any[]>(propUsers || []);
-  const [posts, setPosts] = useState<any[]>(propPosts || []);
+  const [users, setUsers] = useState<DetailedUser[]>(propUsers || []);
+  const [posts, setPosts] = useState<Post[]>(propPosts || []);
   const [sortField, setSortField] = useState('name');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [hoveredUserId, setHoveredUserId] = useState<number | null>(null);
@@ -32,7 +23,7 @@ const UserListComponent = ({
     fetch(API_ENDPOINTS.users)
       .then((r) => r.json())
       .then((data) => setUsers(data))
-      .catch(() => {});
+      .catch(() => { });
   }, [propUsers]);
 
   useEffect(() => {
@@ -40,22 +31,26 @@ const UserListComponent = ({
     fetch(API_ENDPOINTS.posts)
       .then((r) => r.json())
       .then((data) => setPosts(data))
-      .catch(() => {});
+      .catch(() => { });
   }, [propPosts]);
 
-  
+
   const filteredUsers = useMemo(() => {
     if (!globalSearchQuery) return users;
     const q = globalSearchQuery.toLowerCase();
 
-    return users.filter((u: any) =>
+    return users.filter((u: DetailedUser) =>
       u.name.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
       u.company?.name?.toLowerCase().includes(q)
     );
   }, [users, globalSearchQuery]);
 
-  const sorted = useMemo(() => _.sortBy(filteredUsers, [sortField]), [filteredUsers, sortField]);
+  const sorted = useMemo(() => [...filteredUsers].sort((a, b) => {
+    const aVal = String((a as any)[sortField] ?? '').toLowerCase();
+    const bVal = String((b as any)[sortField] ?? '').toLowerCase();
+    return aVal.localeCompare(bVal);
+  }), [filteredUsers, sortField]);
 
   const selectedUser = useMemo(
     () => sorted.find((u: any) => u.id === selectedId) ?? null,
@@ -64,7 +59,7 @@ const UserListComponent = ({
 
   const tooltipRoot = document.getElementById('tooltip-root') || document.body;
 
-  
+
   const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortField(e.target.value);
   }, []);
@@ -133,14 +128,13 @@ const UserListComponent = ({
 
       <CardContent>
         <div className="max-h-[400px] overflow-auto space-y-2">
-          {sorted.map((user: any) => (
+          {sorted.map((user: DetailedUser) => (
             <button
               key={user.id}
-              className={`relative w-full text-left p-3 border rounded-lg ${
-                selectedId === user.id
+              className={`relative w-full text-left p-3 border rounded-lg ${selectedId === user.id
                   ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
                   : 'hover:bg-muted/50'
-              }`}
+                }`}
               onClick={() => handleUserClick(user)}
               onKeyDown={(e) => handleUserKeyDown(e, user)}
             >

@@ -1,5 +1,4 @@
-import React, { Suspense, useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import groupBy from 'lodash/groupBy';
+import React, { Suspense, useEffect, useRef, useState, useCallback, useMemo, useContext } from 'react';
 
 import WeatherWidget from '../WeatherWidget';
 import UserList from '../UserList';
@@ -22,11 +21,9 @@ const D3Visualization = React.lazy(() => import('../D3Visualization'));
 const MathPlayground = React.lazy(() => import('../MathPlayground'));
 
 import { DashboardOverviewTabProps } from '../../lib/types';
+import { AppContext } from '@/App';
 
 const DashboardOverviewTab = React.memo(({
-  theme,
-  counter,
-  globalSearchQuery,
   lastUpdated,
   cryptoData,
   weatherData,
@@ -48,6 +45,7 @@ const DashboardOverviewTab = React.memo(({
   onProfileSave,
   getSortedAndFilteredPosts,
 }: DashboardOverviewTabProps) => {
+  const { theme, counter, globalSearchQuery } = useContext(AppContext);
   const shimmerRef = useRef<HTMLDivElement | null>(null);
   const [isShimmerInView, setIsShimmerInView] = useState(true);
 
@@ -71,21 +69,24 @@ const DashboardOverviewTab = React.memo(({
     };
   }, []);
 
-  
-  const commentsByPostId = useMemo(() => groupBy(comments, 'postId'), [comments]);
+
+  const commentsByPostId = useMemo(() => comments.reduce((acc, c) => {
+    (acc[c.postId] ??= []).push(c);
+    return acc;
+  }, {} as Record<string, typeof comments>), [comments]);
 
   const sortedAndFilteredPosts = useMemo(
     () => getSortedAndFilteredPosts(),
     [getSortedAndFilteredPosts],
   );
 
-  
+
   const searchFilterData = useMemo(
     () => [...posts, ...users, ...todos],
     [posts, users, todos],
   );
 
-  
+
   const handleSelectItem = useCallback(
     (...args: Parameters<typeof onSelectItem>) => onSelectItem(...args),
     [onSelectItem],
@@ -126,7 +127,7 @@ const DashboardOverviewTab = React.memo(({
     [onProfileSave],
   );
 
-  // Memoize the CustomTabPanel tabs array so it isn't recreated each render.
+
   const quickStatsTabs = useMemo(
     () => [
       {
@@ -150,6 +151,8 @@ const DashboardOverviewTab = React.memo(({
     ],
     [posts.length, users.length, todos.length, comments.length],
   );
+
+
 
   return (
     <Suspense
@@ -258,3 +261,4 @@ const DashboardOverviewTab = React.memo(({
 DashboardOverviewTab.displayName = 'DashboardOverviewTab';
 
 export default DashboardOverviewTab;
+

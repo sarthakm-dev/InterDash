@@ -1,26 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
-import _ from 'lodash';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { BarChart3 } from 'lucide-react';
+import type { DataChartProps, Todo } from '@/lib/types';
 
 Chart.register(...registerables);
 
-interface DataChartProps {
-  posts: any[];
-  users: any[];
-  todos: any[];
-  comments: any[];
-  theme: string;
-  counter: number;
-}
-
 const arePropsEqual = (prev: DataChartProps, next: DataChartProps) =>
-  prev.posts.length    === next.posts.length    &&
-  prev.users.length    === next.users.length    &&
-  prev.todos.length    === next.todos.length    &&
+  prev.posts.length === next.posts.length &&
+  prev.users.length === next.users.length &&
+  prev.todos.length === next.todos.length &&
   prev.comments.length === next.comments.length &&
-  prev.theme           === next.theme;
+  prev.theme === next.theme;
 
 const DataChart = React.memo(({ posts, users, todos, comments, theme, counter }: DataChartProps) => {
   const chartRef1 = useRef<HTMLCanvasElement>(null);
@@ -37,7 +28,11 @@ const DataChart = React.memo(({ posts, users, todos, comments, theme, counter }:
 
     chartInstance1.current?.destroy();
 
-    const postsPerUser = _.countBy(posts, 'userId');
+    const postsPerUser = posts.reduce((acc, p) => {
+      acc[p.userId] = (acc[p.userId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
     const ctx = chartRef1.current.getContext('2d')!;
 
     chartInstance1.current = new Chart(ctx, {
@@ -65,16 +60,16 @@ const DataChart = React.memo(({ posts, users, todos, comments, theme, counter }:
     return () => {
       chartInstance1.current?.destroy();
     };
-  }, [posts]); 
+  }, [posts]);
 
-  
+
   useEffect(() => {
     if (!chartRef2.current || todos.length === 0) return;
 
     chartInstance2.current?.destroy();
 
-    const completed = todos.filter((t: any) => t.completed).length;
-    const pending = todos.filter((t: any) => !t.completed).length;
+    const completed = todos.filter((t: Todo) => t.completed).length;
+    const pending = todos.filter((t: Todo) => !t.completed).length;
 
     const ctx = chartRef2.current.getContext('2d')!;
 
@@ -95,18 +90,21 @@ const DataChart = React.memo(({ posts, users, todos, comments, theme, counter }:
     return () => {
       chartInstance2.current?.destroy();
     };
-  }, [todos]); 
+  }, [todos]);
 
-  
+
   useEffect(() => {
     if (!chartRef3.current || comments.length === 0) return;
 
     chartInstance3.current?.destroy();
 
-    const commentsPerPost = _.countBy(comments, 'postId');
+    const commentsPerPost = comments.reduce((acc, c) => {
+      acc[c.postId] = (acc[c.postId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
     const top10 = Object.entries(commentsPerPost)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
-      .slice(0, 10);
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
 
     const ctx = chartRef3.current.getContext('2d')!;
 
@@ -130,7 +128,7 @@ const DataChart = React.memo(({ posts, users, todos, comments, theme, counter }:
     return () => {
       chartInstance3.current?.destroy();
     };
-  }, [comments]); 
+  }, [comments]);
 
   return (
     <Card>

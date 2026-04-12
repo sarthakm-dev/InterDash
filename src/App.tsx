@@ -10,6 +10,21 @@ import React, {
   use,
 } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import type {
+  AppContextValue,
+  AppDataShape,
+  AppNotification,
+  AppUser,
+  ErrorLogEntry,
+  NotificationFetchParams,
+  Toast,
+  Post,
+  Todo,
+  Comment,
+  Album,
+  Photo,
+  User,
+} from './lib/types';
 
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const Header = lazy(() => import('./components/Header'));
@@ -29,27 +44,31 @@ const ReportGenerator = lazy(() => import('./components/ReportGenerator'));
 const D3Visualization = lazy(() => import('./components/D3Visualization'));
 const MathPlayground = lazy(() => import('./components/MathPlayground'));
 
-export const AppContext = createContext<any>({});
-
-interface Toast {
-  id: number;
-  message: string;
-  type: 'info' | 'success' | 'error';
-}
+export const AppContext = createContext<AppContextValue>({
+  theme: 'light',
+  user: null,
+  notifications: [],
+  counter: 0,
+  sidebarOpen: true,
+  globalSearchQuery: '',
+  handleThemeToggle: () => { },
+  setUser: () => { },
+  setGlobalSearchQuery: () => { },
+  addToast: () => { },
+});
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
-  { hasError: boolean; errorLog: any[] }
+  { hasError: boolean; errorLog: ErrorLogEntry[] }
 > {
-  constructor(props: any) {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, errorLog: [] };
   }
   static getDerivedStateFromError() {
     return { hasError: true };
   }
-  componentDidCatch(error: any, errorInfo: any) {
-    console.log('Error caught:', error);
+  componentDidCatch(error: Error) {
     this.setState((prev) => ({
       ...prev,
       errorLog: [...prev.errorLog, { error: error.toString(), time: Date.now() }],
@@ -73,14 +92,20 @@ const PageFallback = () => (
 
 function App() {
   const [theme, setTheme] = useState('light');
-  const [user, setUser] = useState<any>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [appData, setAppData] = useState<any>({});
+  const [appData, setAppData] = useState<AppDataShape>({});
   const [counter, setCounter] = useState(0);
   const [routeHistory, setRouteHistory] = useState<string[]>([]);
   const [debugMode, setDebugMode] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
 
   const MAX_TOASTS = 5;
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -96,14 +121,45 @@ function App() {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
   }, []);
+  useEffect(() => {
+    Promise.all([
+      fetch('https://jsonplaceholder.typicode.com/posts').then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/users').then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/todos').then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/comments').then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/albums').then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/photos?_limit=50').then((r) => r.json()),
+    ])
+      .then(([p, u, t, c, al, ph]: [Post[], User[], Todo[], Comment[], Album[], Photo[]]) => {
+        setPosts(p);
+        setUsers(u);
+        setTodos(t);
+        setComments(c);
+        setAlbums(al);
+        setPhotos(ph);
+      })
+      .catch((e) => console.error('Failed to fetch app data:', e));
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const redirectUrl = params.get('redirect') || params.get('next') || params.get('return_to');
     if (redirectUrl) {
-      window.location.href = redirectUrl;
+      try {
+        const url = new URL(redirectUrl, window.location.origin)
+
+        if (url.origin === window.location.origin) {
+          window.location.href = url.href
+        } else {
+          console.warn('Blocked unsafe redirect:', redirectUrl)
+        }
+      } catch {
+        console.warn('Invalid redirect URL:', redirectUrl)
+      }
     }
-  }, []);
+  }, [])
+
+
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -115,10 +171,7 @@ function App() {
           if (parsed.theme) setTheme(parsed.theme);
           if (parsed.debug) setDebugMode(true);
         }
-        console.log('Applied URL config:', configParam);
-      } catch (e) {
-        console.log('Config parse failed:', e);
-      }
+      } catch (e) { }
     }
     const callback = params.get('callback');
     if (callback) {
@@ -128,26 +181,35 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      if (event.data && typeof event.data === 'object') {
-        const merge = (target: any, source: any) => {
-          for (const key in source) {
-            if (typeof source[key] === 'object' && source[key] !== null) {
-              if (!target[key]) target[key] = {};
-              merge(target[key], source[key]);
-            } else {
-              target[key] = source[key];
-            }
-          }
-        };
-        merge(appData, event.data);
-        setAppData({ ...appData });
-        console.log('Merged postMessage data:', event.data);
-      }
-    };
-    window.addEventListener('message', handler);
-  }, []);
+    const ALLOWED_ORIGINS = [window.location.origin];
+    const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
+    const safeMerge = (target: any, source: any): any => {
+      for (const key of Object.keys(source)) {
+        if (BLOCKED_KEYS.has(key)) continue;
+        const val = source[key];
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          target[key] = safeMerge(
+            target[key] && typeof target[key] === 'object' ? { ...target[key] } : {},
+            val,
+          );
+        } else {
+          target[key] = val;
+        }
+      }
+      return target;
+    };
+
+    const handler = (event: MessageEvent) => {
+      if (!ALLOWED_ORIGINS.includes(event.origin)) return;
+      if (!event.data || typeof event.data !== 'object' || Array.isArray(event.data)) return;
+
+      setAppData((prev) => safeMerge({ ...prev }, event.data));
+    };
+
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
   useEffect(() => {
     const interval = setInterval(() => {
       setCounter((prev) => prev + 1);
@@ -157,7 +219,7 @@ function App() {
 
   useEffect(() => {
     fetchNotifications({ userId: user?.id, theme: theme });
-  }, [{ userId: user?.id, theme: theme }]);
+  }, [user?.id, theme]);
 
   useEffect(() => {
     const state = {
@@ -172,17 +234,15 @@ function App() {
     };
     localStorage.setItem('appState', JSON.stringify(state));
     sessionStorage.setItem('appState', JSON.stringify(state));
-    console.log('Persisted state to localStorage, size:', JSON.stringify(state).length, 'bytes');
-  }, [counter]);
+  }, []);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('appState');
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('Restored state from localStorage:', parsed.counter);
       }
-    } catch (e) {}
+    } catch (e) { }
   });
 
   useEffect(() => {
@@ -190,14 +250,12 @@ function App() {
     setRouteHistory((prev) => [...prev, path]);
   }, []);
 
-  const fetchNotifications = useCallback(async (params: any) => {
+  const fetchNotifications = useCallback(async (_params: NotificationFetchParams) => {
     try {
       const res = await fetch('https://jsonplaceholder.typicode.com/comments?_limit=5');
       const data = await res.json();
       setNotifications(data);
-    } catch (e) {
-      console.log('notification fetch failed');
-    }
+    } catch (e) { }
   }, []);
 
   const handleThemeToggle = useCallback(() => {
@@ -205,8 +263,12 @@ function App() {
     document.documentElement.classList.toggle('dark');
   }, []);
 
-  const getFilteredData = useCallback((data: any[], query: string) => {
-    console.log('filtering data...', Date.now());
+  const searchFilterData = useMemo(
+    () => [...posts, ...users, ...todos],
+    [posts, users, todos],
+  );
+
+  const getFilteredData = useCallback((data: unknown[], _query: string) => {
     const result: number[] = [];
     for (let i = 0; i < 10000; i++) {
       result.push(Math.random());
@@ -266,7 +328,7 @@ function App() {
           email: username + '@company.com',
           token: btoa(username + ':' + password),
         });
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
@@ -414,17 +476,12 @@ function App() {
                       path="/"
                       element={
                         <Dashboard
-                          theme={theme}
                           user={user}
                           notifications={notifications}
-                          globalSearchQuery={globalSearchQuery}
-                          setGlobalSearchQuery={setGlobalSearchQuery}
-                          counter={counter}
                           sidebarOpen={sidebarOpen}
                           getFilteredData={getFilteredData}
                           appData={appData}
                           setAppData={setAppData}
-                          handleThemeToggle={handleThemeToggle}
                         />
                       }
                     />
@@ -452,10 +509,10 @@ function App() {
                       element={
                         <TodoList
                           todos={[]}
-                          onAdd={() => {}}
-                          onEdit={() => {}}
-                          onDelete={() => {}}
-                          onToggle={() => {}}
+                          onAdd={() => { }}
+                          onEdit={() => { }}
+                          onDelete={() => { }}
+                          onToggle={() => { }}
                           theme={theme}
                           counter={counter}
                         />
@@ -465,10 +522,10 @@ function App() {
                       path="/charts"
                       element={
                         <DataChart
-                          posts={[]}
-                          users={[]}
-                          todos={[]}
-                          comments={[]}
+                          posts={posts}
+                          users={users}
+                          todos={todos}
+                          comments={comments}
                           theme={theme}
                           counter={counter}
                         />
@@ -486,12 +543,12 @@ function App() {
                       path="/analytics"
                       element={
                         <Analytics
-                          posts={[]}
-                          users={[]}
-                          todos={[]}
-                          comments={[]}
-                          albums={[]}
-                          photos={[]}
+                          posts={posts}
+                          users={users}
+                          todos={todos}
+                          comments={comments}
+                          albums={albums}
+                          photos={photos}
                           theme={theme}
                           counter={counter}
                         />
@@ -499,7 +556,7 @@ function App() {
                     />
                     <Route
                       path="/search"
-                      element={<SearchFilter data={[]} theme={theme} counter={counter} />}
+                      element={<SearchFilter data={searchFilterData} theme={theme} counter={counter} />}
                     />
                     <Route path="/3d" element={<ThreeScene counter={counter} theme={theme} />} />
                     <Route
@@ -510,7 +567,7 @@ function App() {
                     />
                     <Route
                       path="/d3"
-                      element={<D3Visualization data={[]} counter={counter} theme={theme} />}
+                      element={<D3Visualization data={posts} counter={counter} theme={theme} />}
                     />
                     <Route
                       path="/math"
@@ -532,16 +589,14 @@ function App() {
               {toasts.map((toast) => (
                 <div
                   key={toast.id}
-                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${
-                    toast.type === 'error'
-                      ? 'bg-red-500'
-                      : toast.type === 'success'
-                        ? 'bg-green-600'
-                        : 'bg-blue-500'
-                  }`}
+                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${toast.type === 'error'
+                    ? 'bg-red-500'
+                    : toast.type === 'success'
+                      ? 'bg-green-600'
+                      : 'bg-blue-500'
+                    }`}
                 >
                   <span className="flex-1">{toast.message}</span>
-                  {/* ISSUE-014 fix: button instead of href="#" for dismiss */}
                   <button
                     className="text-white/70 hover:text-white text-lg leading-none"
                     onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}

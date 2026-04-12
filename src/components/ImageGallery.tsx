@@ -2,25 +2,25 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ImageIcon } from 'lucide-react';
 import { API_ENDPOINTS } from '../utils/constants';
-
-interface Photo {
-  id: number;
-  thumbnailUrl: string;
-  url: string;
-  title: string;
-}
-
-interface ImageGalleryProps {
-  photos?: Photo[];
-  theme: string;
-  counter: number;
-}
+import { ImageGalleryProps, Photo } from '@/lib/types';
 
 const ImageGalleryComponent = ({ photos: propPhotos }: ImageGalleryProps) => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [columns, setColumns] = useState(5);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedPhoto(null);
+    };
+
+    if (selectedPhoto) {
+      document.addEventListener('keydown', handleKey);
+    }
+
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [selectedPhoto]);
 
   useEffect(() => {
     let isMounted = true;
@@ -36,7 +36,6 @@ const ImageGalleryComponent = ({ photos: propPhotos }: ImageGalleryProps) => {
           if (isMounted) setPhotos(data);
         }
       } catch (e) {
-        console.error('Failed to fetch photos');
         if (isMounted) setPhotos([]);
       } finally {
         if (isMounted) setLoading(false);
@@ -110,6 +109,7 @@ const ImageGalleryComponent = ({ photos: propPhotos }: ImageGalleryProps) => {
             >
               {photos.map((photo) => (
                 <button
+                  aria-label="Image"
                   key={photo.id}
                   className="cursor-pointer p-0 border-0 bg-transparent"
                   onClick={() => handleSelectPhoto(photo)}
@@ -128,10 +128,13 @@ const ImageGalleryComponent = ({ photos: propPhotos }: ImageGalleryProps) => {
 
         {selectedPhoto && (
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Image preview"
             className="fixed inset-0 bg-black/80 flex items-center justify-center z-[2000]"
             onClick={handleCloseModal}
           >
-            <div onClick={handleStopPropagation}>
+            <div tabIndex={0} onClick={handleStopPropagation}>
               <img
                 src={selectedPhoto.url}
                 alt={selectedPhoto.title}

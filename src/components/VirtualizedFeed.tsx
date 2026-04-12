@@ -1,13 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { List } from 'lucide-react'
-
-interface VirtualizedFeedProps {
-  items: any[]
-  counter: number
-  itemHeight?: number
-  visibleCount?: number
-}
+import type { VirtualizedFeedItem, VirtualizedFeedProps } from '@/lib/types'
 
 const VirtualizedFeedComponent = ({
   items,
@@ -48,7 +42,7 @@ const VirtualizedFeedComponent = ({
         >
           <div style={{ height: `${totalHeight}px`, position: 'relative' }}>
             <div style={{ transform: `translateY(${offsetY}px)` }}>
-              {visibleItems.map((item: any, i: number) => {
+              {visibleItems.map((item: VirtualizedFeedItem, i: number) => {
                 const stableKey =
                   item.id ??
                   item.uuid ??
