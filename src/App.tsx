@@ -26,6 +26,7 @@ import type {
   User,
 } from './lib/types';
 import { on } from 'events';
+import NotFound from './components/NotFound';
 
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const Header = lazy(() => import('./components/Header'));
@@ -182,35 +183,32 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const ALLOWED_ORIGINS = [window.location.origin];
-    const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-
-    const safeMerge = (target: any, source: any): any => {
-      for (const key of Object.keys(source)) {
-        if (BLOCKED_KEYS.has(key)) continue;
-        const val = source[key];
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
-          target[key] = safeMerge(
-            target[key] && typeof target[key] === 'object' ? { ...target[key] } : {},
-            val,
-          );
-        } else {
-          target[key] = val;
-        }
-      }
-      return target;
-    };
-
     const handler = (event: MessageEvent) => {
-      if (!ALLOWED_ORIGINS.includes(event.origin)) return;
-      if (!event.data || typeof event.data !== 'object' || Array.isArray(event.data)) return;
+      if (event.origin !== 'http://localhost:3000') return;
 
-      setAppData((prev) => safeMerge({ ...prev }, event.data));
+      if (event.data && typeof event.data === 'object' && !Array.isArray(event)) {
+        const merge = (target: any, source: any) => {
+          for (const key in source) {
+            if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+              return;
+            }
+            if (typeof source[key] === 'object' && source[key] !== null) {
+              if (!target[key]) target[key] = {};
+              merge(target[key], source[key]);
+            } else {
+              target[key] = source[key];
+            }
+          }
+        };
+        const updatedData = { ...appData };
+        merge(updatedData, event.data);
+        setAppData(updatedData);
+      }
     };
-
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [appData]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCounter((prev) => prev + 1);
@@ -460,6 +458,7 @@ function App() {
               <main className="min-w-0 flex-1 p-5 overflow-auto">
                 <Suspense fallback={<PageFallback />}>
                   <Routes>
+                    <Route path="*" element={<NotFound />} />
                     <Route
                       path="/"
                       element={
@@ -479,19 +478,19 @@ function App() {
                     />
                     <Route
                       path="/weather"
-                      element={<WeatherWidget theme={theme}  />}
+                      element={<WeatherWidget theme={theme} />}
                     />
                     <Route
                       path="/users"
                       element={
                         <UserList
                           theme={theme}
-              
+
                           globalSearchQuery={globalSearchQuery}
                         />
                       }
                     />
-                    <Route path="/posts" element={<PostsFeed theme={theme}  />} />
+                    <Route path="/posts" element={<PostsFeed theme={theme} />} />
                     <Route
                       path="/todos"
                       element={
@@ -514,7 +513,7 @@ function App() {
                           todos={todos}
                           comments={comments}
                           theme={theme}
-                          
+
                         />
                       }
                     />
@@ -537,28 +536,28 @@ function App() {
                           albums={albums}
                           photos={photos}
                           theme={theme}
-            
+
                         />
                       }
                     />
                     <Route
                       path="/search"
-                      element={<SearchFilter data={searchFilterData} theme={theme}  />}
+                      element={<SearchFilter data={searchFilterData} theme={theme} />}
                     />
                     <Route path="/3d" element={<ThreeScene theme={theme} />} />
                     <Route
                       path="/reports"
                       element={
-                        <ReportGenerator posts={[]} users={[]}  theme={theme} />
+                        <ReportGenerator posts={[]} users={[]} theme={theme} />
                       }
                     />
                     <Route
                       path="/d3"
-                      element={<D3Visualization data={posts}  theme={theme} />}
+                      element={<D3Visualization data={posts} theme={theme} />}
                     />
                     <Route
                       path="/math"
-                      element={<MathPlayground  theme={theme} />}
+                      element={<MathPlayground theme={theme} />}
                     />
                   </Routes>
                 </Suspense>
