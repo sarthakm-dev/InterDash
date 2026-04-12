@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
-import _ from 'lodash';
-import moment from 'moment';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Activity, BarChart, Users, FileText, CheckSquare, Image } from 'lucide-react';
+import { Activity, Users, FileText, CheckSquare, Image } from 'lucide-react';
 import type { AnalyticsProps, AnalyticsStats, Todo } from '@/lib/types';
 
 import {
@@ -17,10 +16,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
 } from 'recharts';
 
 const COLORS = [
@@ -46,36 +41,53 @@ const Analytics = React.memo(({
   theme,
   counter,
 }: AnalyticsProps) => {
-  
+
   const stats = useMemo(() => {
     const result: Partial<AnalyticsStats> = {};
 
-    result.postsPerUser = _.countBy(posts, 'userId');
-    result.commentsPerPost = _.countBy(comments, 'postId');
-    result.avgWordCount = _.meanBy(posts, (p: any) => p.body?.split(' ').length || 0);
 
-    const postsByUser = _.groupBy(posts, 'userId');
-    const todosByUser = _.groupBy(todos, 'userId');
-    const albumsByUser = _.groupBy(albums, 'userId');
+    result.postsPerUser = posts.reduce((acc, p) => {
+      acc[p.userId] = (acc[p.userId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    result.commentsPerPost = comments.reduce((acc, c) => {
+      acc[c.postId] = (acc[c.postId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+
+    const totalWords = posts.reduce((sum, p) => sum + (p.body?.split(' ').length || 0), 0);
+    result.avgWordCount = posts.length ? totalWords / posts.length : 0;
+
+
+    const postsByUser = posts.reduce((acc, p) => {
+      (acc[p.userId] ??= []).push(p);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const todosByUser = todos.reduce((acc, t) => {
+      (acc[t.userId] ??= []).push(t);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const albumsByUser = albums.reduce((acc, a) => {
+      (acc[a.userId] ??= []).push(a);
+      return acc;
+    }, {} as Record<string, any[]>);
 
     result.completionRates = {} as Record<string, string>;
     Object.entries(todosByUser).forEach(([userId, userTodos]: [string, any[]]) => {
       const completed = userTodos.filter((t: Todo) => t.completed).length;
-      result.completionRates[userId] = ((completed / userTodos.length) * 100).toFixed(1);
+      result.completionRates![userId] = ((completed / userTodos.length) * 100).toFixed(1);
     });
 
-    result.userActivity = users.map((user) => {
-      const userPosts = postsByUser[user.id] || [];
-      const userTodos = todosByUser[user.id] || [];
-      const userAlbums = albumsByUser[user.id] || [];
-
-      return {
-        ...user,
-        postCount: userPosts.length,
-        todoCount: userTodos.length,
-        albumCount: userAlbums.length,
-      };
-    });
+    result.userActivity = users.map((user) => ({
+      ...user,
+      postCount: (postsByUser[user.id] || []).length,
+      todoCount: (todosByUser[user.id] || []).length,
+      albumCount: (albumsByUser[user.id] || []).length,
+    }));
 
     const postMap = new Map(posts.map((p) => [p.id, p]));
     const userMap = new Map(users.map((u) => [u.id, u]));
@@ -83,15 +95,9 @@ const Analytics = React.memo(({
     result.commentAuthors = comments.map((comment) => {
       const post = postMap.get(comment.postId);
       const user = userMap.get(post?.userId);
-
-      return {
-        ...comment,
-        postAuthor: user?.name,
-        postTitle: post?.title,
-      };
+      return { ...comment, postAuthor: user?.name, postTitle: post?.title };
     });
 
-    // Prepare recharts data
     result.postsChartData = Object.entries(result.postsPerUser).map(([userId, count]) => ({
       name: `User ${userId}`,
       posts: count,
@@ -99,7 +105,6 @@ const Analytics = React.memo(({
 
     let completed = 0;
     let pending = 0;
-
     for (const t of todos) {
       if (t.completed) completed++;
       else pending++;
@@ -110,8 +115,7 @@ const Analytics = React.memo(({
       { name: 'Pending', value: pending },
     ];
 
-    
-    result.calculationTimestamp = moment().format('HH:mm:ss.SSS');
+    result.calculationTimestamp = format(new Date(), 'HH:mm:ss.SSS');
 
     return result;
   }, [posts, users, todos, comments, albums, photos]);
@@ -125,7 +129,6 @@ const Analytics = React.memo(({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Stat Cards */}
         <div className="grid grid-cols-4 gap-3 mb-5">
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
             <FileText className="h-5 w-5 mx-auto text-blue-600 mb-1" />
@@ -151,7 +154,6 @@ const Analytics = React.memo(({
           </div>
         </div>
 
-        {/* Recharts */}
         <div className="grid grid-cols-2 gap-5 mb-5">
           <div>
             <h4 className="text-sm font-medium mb-2">Posts per User</h4>
@@ -187,7 +189,6 @@ const Analytics = React.memo(({
           </div>
         </div>
 
-        {/* User Activity Table */}
         <h4 className="text-sm font-medium mb-2">User Activity</h4>
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full text-sm">

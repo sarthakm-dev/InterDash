@@ -1,8 +1,8 @@
-import _ from 'lodash'
-import moment from 'moment'
+import { format, parseISO } from 'date-fns'
 
 export const formatDate = (date: string | Date): string => {
-  return moment(date).format('MMMM Do YYYY, h:mm:ss a')
+  const d = typeof date === 'string' ? parseISO(date) : date
+  return format(d, 'MMMM do yyyy, h:mm:ss a')
 }
 
 export const formatCurrency = (amount: number): string => {

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import moment from 'moment';
+import { format } from 'date-fns';
 import type { FooterProps } from '@/lib/types';
 
 const Footer = ({ theme, counter, notifications }: FooterProps) => {
-  const [footerTime, setFooterTime] = useState(moment().format('HH:mm:ss'));
+  const [footerTime, setFooterTime] = useState(format(new Date(), 'HH:mm:ss'));
   const [clickCount, setClickCount] = useState(0);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setFooterTime(moment().format('HH:mm:ss'));
+      setFooterTime(format(new Date(), 'HH:mm:ss'));
     }, 500);
     return () => {
       clearInterval(intervalId);
@@ -32,11 +32,11 @@ const Footer = ({ theme, counter, notifications }: FooterProps) => {
       className={`px-5 py-3 border-t flex justify-between text-xs ${theme === 'dark' ? 'bg-gray-900 text-gray-400 border-gray-700' : 'bg-gray-50 text-gray-500 border-gray-200'}`}
     >
       <button aria-label="time" onClick={() => setClickCount(clickCount + 1)}>
-        InternDash &copy; {moment().format('YYYY')} (clicks: {clickCount})
+        InternDash &copy; {format(new Date(), 'yyyy')} (clicks: {clickCount})
       </button>
       <span>Notifications: {notifications?.length || 0}</span>
       <span>
-        Uptime: {counter}s | {footerTime} | Rendered: {moment().format('HH:mm:ss.SSS')}
+        Uptime: {counter}s | {footerTime} | Rendered: {format(new Date(), 'HH:mm:ss.SSS')}
       </span>
     </footer>
   );

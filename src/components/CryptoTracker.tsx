@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import _ from 'lodash';
-import moment from 'moment';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -10,7 +9,7 @@ import { API_ENDPOINTS } from '../utils/constants';
 import type { CryptoData, CryptoTrackerProps } from '@/lib/types';
 
 const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) => {
-  const [coins, setCoins] = useState<CryptoData[]>(data || []);  
+  const [coins, setCoins] = useState<CryptoData[]>(data || []);
   const [sortBy, setSortBy] = useState('market_cap');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [search, setSearch] = useState('');
@@ -31,11 +30,15 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
     );
   };
 
-  const sortedPrices = _.orderBy(
-    (coins || []).filter((p: CryptoData) => p.name?.toLowerCase().includes(search.toLowerCase())),
-    [sortBy],
-    [sortDir],
-  );
+  const sortedPrices = (coins || [])
+    .filter((p: CryptoData) => p.name?.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const aVal = (a as any)[sortBy];
+      const bVal = (b as any)[sortBy];
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   const formatPrice = (price: number) => {
     const str = price?.toString() || '0';
@@ -142,7 +145,7 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
           </table>
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
-          Last updated: {moment().format('HH:mm:ss')} | Render #{counter}
+          Last updated: {format(new Date(), 'HH:mm:ss')} | Render #{counter}
         </p>
       </CardContent>
     </Card>

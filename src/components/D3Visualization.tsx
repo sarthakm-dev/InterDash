@@ -1,5 +1,13 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
-import * as d3 from 'd3'
+import { select } from 'd3-selection'
+import {
+  forceSimulation,
+  forceLink,
+  forceManyBody,
+  forceCenter,
+  forceCollide,
+} from 'd3-force'
+import { schemeCategory10 } from 'd3-scale-chromatic'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { GitBranch } from 'lucide-react'
 
@@ -41,7 +49,7 @@ const D3Visualization = React.memo(({ data, counter, theme }: D3VisualizationPro
   useEffect(() => {
     if (!svgRef.current || graph.nodes.length === 0) return
 
-    const svg = d3.select(svgRef.current)
+    const svg = select(svgRef.current)
     svg.selectAll('*').remove()
 
     const margin = { top: 20, right: 30, bottom: 40, left: 40 }
@@ -53,11 +61,11 @@ const D3Visualization = React.memo(({ data, counter, theme }: D3VisualizationPro
     // Use the memoized stable nodes/links — no Math.random(), no re-layout on counter tick
     const { nodes, links } = graph
 
-    const simulation = d3.forceSimulation(nodes as any)
-      .force('link', d3.forceLink(links as any).id((d: any) => d.id).distance(50))
-      .force('charge', d3.forceManyBody().strength(-100))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(15))
+    const simulation = forceSimulation(nodes as any)
+      .force('link', forceLink(links as any).id((d: any) => d.id).distance(50))
+      .force('charge', forceManyBody().strength(-100))
+      .force('center', forceCenter(width / 2, height / 2))
+      .force('collision', forceCollide().radius(15))
 
     const link = g.append('g')
       .selectAll('line')
@@ -72,7 +80,7 @@ const D3Visualization = React.memo(({ data, counter, theme }: D3VisualizationPro
       .data(nodes)
       .join('circle')
       .attr('r', (d: any) => 3 + d.value / 20)
-      .attr('fill', (d: any, i: number) => d3.schemeCategory10[i % 10])
+      .attr('fill', (d: any, i: number) => schemeCategory10[i % 10])
       .attr('stroke', '#fff')
       .attr('stroke-width', 1.5)
 
