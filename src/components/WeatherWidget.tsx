@@ -5,13 +5,13 @@ import { Button } from './ui/button';
 import { Cloud, Thermometer, Wind } from 'lucide-react';
 import type { WeatherCityData, WeatherWidgetProps } from '@/lib/types';
 
-const WeatherWidgetComponent = ({ theme, counter, data, onCityClick }: WeatherWidgetProps) => {
+const WeatherWidgetComponent = ({ theme, data, onCityClick }: WeatherWidgetProps) => {
   const [weatherData, setWeatherData] = useState<WeatherCityData[]>([]);
   const [unit, setUnit] = useState('celsius');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    
+    const cancel=new AbortController();
     const cities = [
       { name: 'London', lat: 51.5, lon: -0.12 },
       { name: 'New York', lat: 40.71, lon: -74.01 },
@@ -29,27 +29,39 @@ const WeatherWidgetComponent = ({ theme, counter, data, onCityClick }: WeatherWi
             cities.map(async (city) => {
               try{
             const res =  await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m`,
+            `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m`,{signal:cancel.signal}
           );
           const data = await res.json();
+          if(cancel.signal.aborted) return null;
           return {
                 ...city,
                 weather: data.current_weather,
                 hourly: data.hourly,
               };
-            } catch {
+            } catch(e) {
+              if(e.name==='AbortError') {
+                console.error('abort error',e);
+              }
               return null;
             }
           })
         );
-        setWeatherData(results.filter(Boolean) as WeatherCityData[]);
+        if(!cancel.signal.aborted){
+            setWeatherData(results.filter(Boolean) as WeatherCityData[]);
+        }
+        
       } catch (e) {
-        console.error('Weather fetch failed', e);
+        if(!cancel.signal.aborted){
+          console.error('Weather fetch failed', e);
+
+        }
+        
       }
     };
 
     fetchAll();
-  }, []);
+    return ()=>{cancel.abort()}
+  }, [data]);
 
   
   const convertTemp = useCallback((celsius: number) => {

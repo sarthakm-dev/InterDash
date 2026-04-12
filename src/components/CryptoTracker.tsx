@@ -8,7 +8,7 @@ import { Star, TrendingUp, TrendingDown } from 'lucide-react';
 import { API_ENDPOINTS } from '../utils/constants';
 import type { CryptoData, CryptoTrackerProps } from '@/lib/types';
 
-const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) => {
+const CryptoTracker = ({ theme, data, onSelect }: CryptoTrackerProps) => {
   const [coins, setCoins] = useState<CryptoData[]>(data || []);
   const [sortBy, setSortBy] = useState('market_cap');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -17,12 +17,17 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
 
 
   useEffect(() => {
+  
     if (data && data.length > 0) return;
-    fetch(`${API_ENDPOINTS.crypto}?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
+    const cancel=new AbortController();
+    fetch(`${API_ENDPOINTS.crypto}?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`,{signal:cancel.signal})
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setCoins(d); })
-      .catch(() => { });
-  }, []);
+      .catch((error) => {if(!cancel.signal.aborted){
+        console.error('Failed to fetch crypto data:',error);
+      } });
+      return()=>cancel.abort();
+  }, [data]);
 
   const toggleFavorite = (coin: CryptoData) => {
     setFavorites((prev) =>
@@ -145,7 +150,7 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
           </table>
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
-          Last updated: {format(new Date(), 'HH:mm:ss')} | Render #{counter}
+          Last updated: {format(new Date(), 'HH:mm:ss')} 
         </p>
       </CardContent>
     </Card>

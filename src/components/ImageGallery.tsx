@@ -23,31 +23,39 @@ const ImageGalleryComponent = ({ photos: propPhotos }: ImageGalleryProps) => {
   }, [selectedPhoto]);
 
   useEffect(() => {
-    let isMounted = true;
+  const cancel = new AbortController();
 
-    const fetchPhotos = async () => {
-      setLoading(true);
-      try {
-        if (propPhotos?.length) {
-          if (isMounted) setPhotos(propPhotos);
-        } else {
-          const res = await fetch(`${API_ENDPOINTS.photos}?_limit=100`);
-          const data = await res.json();
-          if (isMounted) setPhotos(data);
+  const fetchPhotos = async () => {
+    setLoading(true);
+    try {
+      if (propPhotos?.length) {
+        setPhotos(propPhotos);
+      } else {
+        const res = await fetch(
+          `${API_ENDPOINTS.photos}?_limit=100`,
+          { signal: cancel.signal }
+        );
+        const data = await res.json();
+
+        if (!cancel.signal.aborted) {
+          setPhotos(data);
         }
-      } catch (e) {
-        if (isMounted) setPhotos([]);
-      } finally {
-        if (isMounted) setLoading(false);
       }
-    };
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        setPhotos([]);
+      }
+    } finally {
+      if (!cancel.signal.aborted) {
+        setLoading(false);
+      }
+    }
+  };
 
-    fetchPhotos();
+  fetchPhotos();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [propPhotos]);
+  return () => cancel.abort();
+}, [propPhotos]);
 
   const handleSelectPhoto = useCallback((photo: Photo) => {
     setSelectedPhoto(photo);
@@ -115,7 +123,7 @@ const ImageGalleryComponent = ({ photos: propPhotos }: ImageGalleryProps) => {
                   onClick={() => handleSelectPhoto(photo)}
                 >
                   <img
-                    src={photo.thumbnailUrl}
+                    src={photo.url}
                     alt={photo.title}
                     loading="lazy"
                     className="w-[110px] h-[110px] object-cover rounded"

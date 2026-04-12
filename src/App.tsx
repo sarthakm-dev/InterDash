@@ -25,6 +25,8 @@ import type {
   Photo,
   User,
 } from './lib/types';
+import { on } from 'events';
+import NotFound from './components/NotFound';
 
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const Header = lazy(() => import('./components/Header'));
@@ -122,13 +124,14 @@ function App() {
     }, 3000);
   }, []);
   useEffect(() => {
+    const cancel=new AbortController();
     Promise.all([
-      fetch('https://jsonplaceholder.typicode.com/posts').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/users').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/todos').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/comments').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/albums').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/photos?_limit=50').then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/posts',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/users',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/todos',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/comments',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/albums',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/photos?_limit=50',{signal:cancel.signal}).then((r) => r.json()),
     ])
       .then(([p, u, t, c, al, ph]: [Post[], User[], Todo[], Comment[], Album[], Photo[]]) => {
         setPosts(p);
@@ -138,7 +141,11 @@ function App() {
         setAlbums(al);
         setPhotos(ph);
       })
-      .catch((e) => console.error('Failed to fetch app data:', e));
+      .catch((e) => {
+        if(!cancel.signal.aborted){
+          console.error('Failed to fetch app data:', e)
+        }
+      });
   }, []);
 
   useEffect(() => {
@@ -181,35 +188,32 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const ALLOWED_ORIGINS = [window.location.origin];
-    const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-
-    const safeMerge = (target: any, source: any): any => {
-      for (const key of Object.keys(source)) {
-        if (BLOCKED_KEYS.has(key)) continue;
-        const val = source[key];
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
-          target[key] = safeMerge(
-            target[key] && typeof target[key] === 'object' ? { ...target[key] } : {},
-            val,
-          );
-        } else {
-          target[key] = val;
-        }
-      }
-      return target;
-    };
-
     const handler = (event: MessageEvent) => {
-      if (!ALLOWED_ORIGINS.includes(event.origin)) return;
-      if (!event.data || typeof event.data !== 'object' || Array.isArray(event.data)) return;
+      if (event.origin !== 'http://localhost:3000') return;
 
-      setAppData((prev) => safeMerge({ ...prev }, event.data));
+      if (event.data && typeof event.data === 'object' && !Array.isArray(event)) {
+        const merge = (target: any, source: any) => {
+          for (const key in source) {
+            if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+              return;
+            }
+            if (typeof source[key] === 'object' && source[key] !== null) {
+              if (!target[key]) target[key] = {};
+              merge(target[key], source[key]);
+            } else {
+              target[key] = source[key];
+            }
+          }
+        };
+        const updatedData = { ...appData };
+        merge(updatedData, event.data);
+        setAppData(updatedData);
+      }
     };
-
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [appData]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCounter((prev) => prev + 1);
@@ -304,33 +308,20 @@ function App() {
     ],
   );
 
+
   const handleLogin = useCallback((username: string, password: string) => {
-    localStorage.setItem(
-      'auth_credentials',
-      JSON.stringify({ username, password, timestamp: Date.now() }),
-    );
-    document.cookie = `session_user=${username}; path=/`;
-    document.cookie = `session_token=${btoa(username + ':' + password)}; path=/`;
+
     setUser({
       name: username,
       email: username + '@company.com',
-      token: btoa(username + ':' + password),
+
     });
   }, []);
 
-  useEffect(() => {
-    const creds = localStorage.getItem('auth_credentials');
-    if (creds) {
-      try {
-        const { username, password } = JSON.parse(creds);
-        setUser({
-          name: username,
-          email: username + '@company.com',
-          token: btoa(username + ':' + password),
-        });
-      } catch (e) { }
-    }
-  }, []);
+  const onEditPropHandler = useCallback((_id: number, _text: string) => { }, []);
+  const onAddPropHandler = useCallback((_text: string) => { }, []);
+  const onDeletePropHandler = useCallback((_id: number) => { }, []);
+  const onTogglePropHandler = useCallback((_id: number) => { }, []);
 
   return (
     <ErrorBoundary>
@@ -472,6 +463,7 @@ function App() {
               <main className="min-w-0 flex-1 p-5 overflow-auto">
                 <Suspense fallback={<PageFallback />}>
                   <Routes>
+                    <Route path="*" element={<NotFound />} />
                     <Route
                       path="/"
                       element={
@@ -487,34 +479,33 @@ function App() {
                     />
                     <Route
                       path="/crypto"
-                      element={<CryptoTracker theme={theme} counter={counter} />}
+                      element={<CryptoTracker theme={theme} />}
                     />
                     <Route
                       path="/weather"
-                      element={<WeatherWidget theme={theme} counter={counter} />}
+                      element={<WeatherWidget theme={theme} />}
                     />
                     <Route
                       path="/users"
                       element={
                         <UserList
                           theme={theme}
-                          counter={counter}
+
                           globalSearchQuery={globalSearchQuery}
                         />
                       }
                     />
-                    <Route path="/posts" element={<PostsFeed theme={theme} counter={counter} />} />
+                    <Route path="/posts" element={<PostsFeed theme={theme} />} />
                     <Route
                       path="/todos"
                       element={
                         <TodoList
                           todos={[]}
-                          onAdd={() => { }}
-                          onEdit={() => { }}
-                          onDelete={() => { }}
-                          onToggle={() => { }}
+                          onAdd={onAddPropHandler}
+                          onEdit={onEditPropHandler}
+                          onDelete={onDeletePropHandler}
+                          onToggle={onTogglePropHandler}
                           theme={theme}
-                          counter={counter}
                         />
                       }
                     />
@@ -527,17 +518,17 @@ function App() {
                           todos={todos}
                           comments={comments}
                           theme={theme}
-                          counter={counter}
+
                         />
                       }
                     />
                     <Route
                       path="/gallery"
-                      element={<ImageGallery theme={theme} counter={counter} />}
+                      element={<ImageGallery photos={photos} theme={theme} />}
                     />
                     <Route
                       path="/editor"
-                      element={<MarkdownEditor theme={theme} counter={counter} />}
+                      element={<MarkdownEditor theme={theme} />}
                     />
                     <Route
                       path="/analytics"
@@ -550,28 +541,28 @@ function App() {
                           albums={albums}
                           photos={photos}
                           theme={theme}
-                          counter={counter}
+
                         />
                       }
                     />
                     <Route
                       path="/search"
-                      element={<SearchFilter data={searchFilterData} theme={theme} counter={counter} />}
+                      element={<SearchFilter data={searchFilterData} theme={theme} />}
                     />
-                    <Route path="/3d" element={<ThreeScene counter={counter} theme={theme} />} />
+                    <Route path="/3d" element={<ThreeScene theme={theme} />} />
                     <Route
                       path="/reports"
                       element={
-                        <ReportGenerator posts={[]} users={[]} counter={counter} theme={theme} />
+                        <ReportGenerator posts={[]} users={[]} theme={theme} />
                       }
                     />
                     <Route
                       path="/d3"
-                      element={<D3Visualization data={posts} counter={counter} theme={theme} />}
+                      element={<D3Visualization data={posts} theme={theme} />}
                     />
                     <Route
                       path="/math"
-                      element={<MathPlayground counter={counter} theme={theme} />}
+                      element={<MathPlayground theme={theme} />}
                     />
                   </Routes>
                 </Suspense>
