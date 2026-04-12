@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Cloud, Thermometer, Wind } from 'lucide-react';
 import type { WeatherCityData, WeatherWidgetProps } from '@/lib/types';
 
-const WeatherWidgetComponent = ({ theme, counter, data, onCityClick }: WeatherWidgetProps) => {
+const WeatherWidgetComponent = ({ theme, data, onCityClick }: WeatherWidgetProps) => {
   const [weatherData, setWeatherData] = useState<WeatherCityData[]>([]);
   const [unit, setUnit] = useState('celsius');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -49,7 +49,7 @@ const WeatherWidgetComponent = ({ theme, counter, data, onCityClick }: WeatherWi
     };
 
     fetchAll();
-  }, []);
+  }, [data]);
 
   
   const convertTemp = useCallback((celsius: number) => {

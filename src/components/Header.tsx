@@ -283,7 +283,7 @@ const Header = ({
           )}
         </div>
 
-        <span className="text-xs text-muted-foreground">Counter: {counter}</span>
+        <span className="text-xs text-muted-foreground">Uptime: {counter}s</span>
       </div>
     </header>
   );
