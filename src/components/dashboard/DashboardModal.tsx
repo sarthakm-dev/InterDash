@@ -13,7 +13,7 @@ const DashboardModal = ({ open, content, onClose }: DashboardModalProps) => {
 
   document.addEventListener('keydown', handleKey)
   return () => document.removeEventListener('keydown', handleKey)
-  }, [])
+  }, [onClose])
   
 
   if (!open) {
