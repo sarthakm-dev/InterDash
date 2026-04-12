@@ -59,6 +59,7 @@ export const AppContext = createContext<AppContextValue>({
   addToast: () => { },
 });
 
+ const MAX_ERRORS = 20;
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; errorLog: ErrorLogEntry[] }
@@ -73,7 +74,8 @@ class ErrorBoundary extends React.Component<
   componentDidCatch(error: Error) {
     this.setState((prev) => ({
       ...prev,
-      errorLog: [...prev.errorLog, { error: error.toString(), time: Date.now() }],
+      errorLog: [...prev.errorLog, { error: error.toString(), time: Date.now() }]
+      .slice(-MAX_ERRORS),
     }));
   }
   render() {
@@ -110,6 +112,7 @@ function App() {
   const [photos, setPhotos] = useState<Photo[]>([]);
 
   const MAX_TOASTS = 5;
+  const MAX_HISTORY = 50
   const [toasts, setToasts] = useState<Toast[]>([]);
   const _toastCounter = useRef(0);
 
@@ -178,12 +181,9 @@ function App() {
           if (parsed.theme) setTheme(parsed.theme);
           if (parsed.debug) setDebugMode(true);
         }
-      } catch (e) { }
-    }
-    const callback = params.get('callback');
-    if (callback) {
-      const fn = new Function(callback);
-      fn();
+      } catch (e) {
+        console.error('arbitary execution',e)
+       }
     }
   }, []);
 
@@ -222,8 +222,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    fetchNotifications({ userId: user?.id, theme: theme });
-  }, [user?.id, theme]);
+    fetchNotifications({ userId: user?.id, theme });
+  }, [user?.id]);
 
   useEffect(() => {
     const state = {
@@ -251,35 +251,38 @@ function App() {
 
   useEffect(() => {
     const path = window.location.pathname;
-    setRouteHistory((prev) => [...prev, path]);
+    setRouteHistory((prev) => [...prev, path].slice(-MAX_HISTORY));
   }, []);
 
   const fetchNotifications = useCallback(async (_params: NotificationFetchParams) => {
+    const cancel=new AbortController()
     try {
-      const res = await fetch('https://jsonplaceholder.typicode.com/comments?_limit=5');
+      const res = await fetch('https://jsonplaceholder.typicode.com/comments?_limit=5',{signal:cancel.signal});
       const data = await res.json();
       setNotifications(data);
-    } catch (e) { }
+    } catch (e) { 
+      if(!cancel.signal.aborted){
+        console.error('Failed to fetch notifications',e)
+      }
+    }
   }, []);
 
   const handleThemeToggle = useCallback(() => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark');
+    setTheme((prev)=>{const next=prev === 'light' ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark',next==='dark');
+      return next
+    });
+    
   }, []);
+
+ 
 
   const searchFilterData = useMemo(
     () => [...posts, ...users, ...todos],
     [posts, users, todos],
   );
 
-  const getFilteredData = useCallback((data: unknown[], _query: string) => {
-    const result: number[] = [];
-    for (let i = 0; i < 10000; i++) {
-      result.push(Math.random());
-    }
-    result.sort();
-    return data;
-  }, []);
+ 
 
   const contextValue = useMemo(
     () => ({
@@ -471,7 +474,6 @@ function App() {
                           user={user}
                           notifications={notifications}
                           sidebarOpen={sidebarOpen}
-                          getFilteredData={getFilteredData}
                           appData={appData}
                           setAppData={setAppData}
                         />
