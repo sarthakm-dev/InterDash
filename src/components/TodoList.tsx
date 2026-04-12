@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import moment from 'moment'
+import { format } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Input } from './ui/input'
 import { Button } from './ui/button'
@@ -248,7 +248,7 @@ const TodoList = ({ todos: propTodos, onAdd, onDelete, onToggle, onEdit }: TodoL
         </div>
 
         <p className="text-xs text-muted-foreground mt-3">
-          {activeCount} items left · {completedCount} completed · {moment().format('HH:mm:ss')}
+         {activeCount} items left · {completedCount} completed · {format(new Date(), 'HH:mm:ss')}
         </p>
       </CardContent>
     </Card>

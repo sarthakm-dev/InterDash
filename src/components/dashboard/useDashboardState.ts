@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import _ from 'lodash';
 import type { SortOrder, UseDashboardStateOptions, Post } from '../../lib/types';
 
 
@@ -80,8 +79,9 @@ export const useDashboardState = ({
           post.body.toLowerCase().includes(normalizedFilter),
       );
     }
-
-    return _.orderBy(filteredPosts, ['id'], [sortOrder]);
+    return [...filteredPosts].sort((a, b) =>
+      sortOrder === 'asc' ? a.id - b.id : b.id - a.id
+    );
   }, [posts, filterText, sortOrder]);
 
   const getPaginatedData = useCallback((data: Post[]) => {

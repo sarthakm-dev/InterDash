@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import moment from 'moment';
+import { format } from 'date-fns';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -18,7 +18,7 @@ const Header = ({
   setGlobalSearchQuery,
   counter,
 }: HeaderProps) => {
-  const [currentTime, setCurrentTime] = useState(moment().format('HH:mm:ss'));
+  const [currentTime, setCurrentTime] = useState(format(new Date(), 'HH:mm:ss'));
   const [searchResults, setSearchResults] = useState<HeaderSearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
@@ -33,7 +33,7 @@ const Header = ({
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setCurrentTime(moment().format('HH:mm:ss'));
+      setCurrentTime(format(new Date(), 'HH:mm:ss'));
     }, 1000);
     return () => {
       clearInterval(intervalId);

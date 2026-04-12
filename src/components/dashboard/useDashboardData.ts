@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import moment from 'moment';
+import { format } from 'date-fns';
 
 import { WEATHER_CITIES } from '../../lib/constants';
 import { UseDashboardDataOptions, CryptoData, WeatherData, User, Post, Todo, Comment, Album, Photo } from '../../lib/types';
@@ -91,7 +91,7 @@ export const useDashboardData = ({
       setPhotos(photosData);
       setCryptoData(cryptoJson);
       setWeatherData(weatherResults);
-      setLastUpdated(moment().format('HH:mm:ss'));
+     setLastUpdated(format(new Date(), 'HH:mm:ss'));
       setLoading(false);
     } catch (err: unknown) {
       if ((err as Error)?.name === 'AbortError') {

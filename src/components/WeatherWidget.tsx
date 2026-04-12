@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import moment from 'moment';
+import { format, parseISO } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Cloud, Thermometer, Wind } from 'lucide-react';
@@ -163,7 +163,7 @@ const WeatherWidgetComponent = ({ theme, counter, data, onCityClick }: WeatherWi
                       key={i}
                       className="flex justify-between text-[11px] py-0.5 border-b"
                     >
-                      <span>{moment(time).format('ddd HH:mm')}</span>
+                      <span>{format(parseISO(time), 'EEE HH:mm')}</span>
                       <span>{convertTemp(city.hourly.temperature_2m[i])}</span>
                       <span>💧 {city.hourly.relative_humidity_2m[i]}%</span>
                     </div>

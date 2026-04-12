@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import moment from 'moment'
+import { formatDistanceToNow, subHours } from 'date-fns'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -90,7 +90,7 @@ const PostsFeedComponent = ({
             <div className="flex justify-between items-start">
               <h4 className="font-semibold text-sm flex-1">{post.title}</h4>
               <Badge variant="outline" className="text-[10px] ml-2 shrink-0">
-                {moment().subtract(post.id, 'hours').fromNow()}
+               {formatDistanceToNow(subHours(new Date(), post.id), { addSuffix: true })}
               </Badge>
             </div>
 
