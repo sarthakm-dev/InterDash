@@ -17,12 +17,17 @@ const CryptoTracker = ({ theme, counter, data, onSelect }: CryptoTrackerProps) =
 
 
   useEffect(() => {
+  
     if (data && data.length > 0) return;
-    fetch(`${API_ENDPOINTS.crypto}?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
+    const cancel=new AbortController();
+    fetch(`${API_ENDPOINTS.crypto}?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`,{signal:cancel.signal})
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setCoins(d); })
-      .catch(() => { });
-  }, []);
+      .catch((error) => {if(!cancel.signal.aborted){
+        console.error('Failed to fetch crypto data:',error);
+      } });
+      return()=>cancel.abort();
+  }, [data]);
 
   const toggleFavorite = (coin: CryptoData) => {
     setFavorites((prev) =>

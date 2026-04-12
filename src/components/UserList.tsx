@@ -20,18 +20,26 @@ const UserListComponent = ({
 
   useEffect(() => {
     if (propUsers && propUsers.length > 0) return;
-    fetch(API_ENDPOINTS.users)
+    const cancel=new AbortController();
+    fetch(API_ENDPOINTS.users,{signal:cancel.signal})
       .then((r) => r.json())
       .then((data) => setUsers(data))
-      .catch(() => { });
+      .catch((error) => {if(!cancel.signal.aborted){
+        console.error('Failed to fetch users',error)
+      } });
+      return ()=>cancel.abort();
   }, [propUsers]);
 
   useEffect(() => {
     if (propPosts && propPosts.length > 0) return;
-    fetch(API_ENDPOINTS.posts)
+    const cancel=new AbortController();
+    fetch(API_ENDPOINTS.posts,{signal:cancel.signal})
       .then((r) => r.json())
       .then((data) => setPosts(data))
-      .catch(() => { });
+      .catch((error) => {if(!cancel.signal.aborted){
+        console.error('Failed to fetch posts',error)
+      } });
+      return ()=>cancel.abort();
   }, [propPosts]);
 
 
