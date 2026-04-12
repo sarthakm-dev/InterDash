@@ -145,9 +145,21 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const redirectUrl = params.get('redirect') || params.get('next') || params.get('return_to');
     if (redirectUrl) {
-      window.location.href = redirectUrl;
+      try {
+        const url = new URL(redirectUrl, window.location.origin)
+
+        if (url.origin === window.location.origin) {
+          window.location.href = url.href
+        } else {
+          console.warn('Blocked unsafe redirect:', redirectUrl)
+        }
+      } catch {
+        console.warn('Invalid redirect URL:', redirectUrl)
+      }
     }
-  }, []);
+  }, [])
+
+
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -578,10 +590,10 @@ function App() {
                 <div
                   key={toast.id}
                   className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${toast.type === 'error'
-                      ? 'bg-red-500'
-                      : toast.type === 'success'
-                        ? 'bg-green-600'
-                        : 'bg-blue-500'
+                    ? 'bg-red-500'
+                    : toast.type === 'success'
+                      ? 'bg-green-600'
+                      : 'bg-blue-500'
                     }`}
                 >
                   <span className="flex-1">{toast.message}</span>
