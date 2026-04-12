@@ -124,13 +124,14 @@ function App() {
     }, 3000);
   }, []);
   useEffect(() => {
+    const cancel=new AbortController();
     Promise.all([
-      fetch('https://jsonplaceholder.typicode.com/posts').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/users').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/todos').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/comments').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/albums').then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/photos?_limit=50').then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/posts',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/users',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/todos',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/comments',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/albums',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/photos?_limit=50',{signal:cancel.signal}).then((r) => r.json()),
     ])
       .then(([p, u, t, c, al, ph]: [Post[], User[], Todo[], Comment[], Album[], Photo[]]) => {
         setPosts(p);
@@ -140,7 +141,11 @@ function App() {
         setAlbums(al);
         setPhotos(ph);
       })
-      .catch((e) => console.error('Failed to fetch app data:', e));
+      .catch((e) => {
+        if(!cancel.signal.aborted){
+          console.error('Failed to fetch app data:', e)
+        }
+      });
   }, []);
 
   useEffect(() => {

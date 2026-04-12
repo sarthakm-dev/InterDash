@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback,useRef } from 'react'
 import { formatDistanceToNow, subHours } from 'date-fns'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
@@ -23,30 +23,58 @@ const PostsFeedComponent = ({
   useEffect(() => {
     if (propPosts && propPosts.length > 0) return
     setLoading(true)
-    fetch(`${API_ENDPOINTS.posts}?_limit=${ITEMS_PER_PAGE}`)
+    const cancel=new AbortController();
+    fetch(`${API_ENDPOINTS.posts}?_limit=${ITEMS_PER_PAGE}`,{signal:cancel.signal})
+
       .then((r) => r.json())
       .then((data) => setPosts(data))
-      .catch(() => { })
+      .catch((error) => {if(!cancel.signal.aborted){
+        console.error('Failed to fetch posts',error)
+      } })
       .finally(() => setLoading(false))
+      return ()=>cancel.abort();
   }, [propPosts])
 
 
-  const handleExpand = useCallback(
-    (postId: number) => {
-      const isClosing = expandedPost === postId
-      setExpandedPost(isClosing ? null : postId)
 
-      if (!isClosing && !comments[postId]) {
-        fetch(`${API_ENDPOINTS.comments}?postId=${postId}`)
-          .then((r) => r.json())
-          .then((data) =>
-            setComments((prev) => ({ ...prev, [postId]: data }))
-          )
-          .catch(() => {})
-      }
-    },
-    [expandedPost, comments]
-  )
+const abortRef = useRef(null);
+
+const handleExpand = useCallback(
+  (postId: number) => {
+    const isClosing = expandedPost === postId;
+    setExpandedPost(isClosing ? null : postId);
+
+    
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
+    
+    const cancel = new AbortController();
+    abortRef.current = cancel; 
+
+    if (!isClosing && !comments[postId]) {
+      fetch(`${API_ENDPOINTS.comments}?postId=${postId}`, { 
+        signal: cancel.signal 
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          setComments((prev) => ({ ...prev, [postId]: data }));
+          abortRef.current = null; 
+        })
+        .catch((error) => {
+          
+          if (error.name === 'AbortError') {
+            console.log('Previous fetch cancelled ,you clicked other thing.');
+          } else {
+            console.error('Right error:', error);
+          }
+        });
+    }
+  },
+  [expandedPost, comments]
+);
+
 
   const handleLike = useCallback((postId: number) => {
     setLikedPosts((prev) => ({ ...prev, [postId]: !prev[postId] }))
@@ -83,7 +111,7 @@ const PostsFeedComponent = ({
   }
 
   return (
-    <div className="max-h-[500px] overflow-auto space-y-3">
+    <div className="max-h-125 overflow-auto space-y-3">
       {posts.slice(0, ITEMS_PER_PAGE).map((post: Post) => (
         <Card key={post.id} className="overflow-hidden">
           <CardContent className="p-4">

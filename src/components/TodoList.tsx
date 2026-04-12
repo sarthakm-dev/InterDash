@@ -35,13 +35,24 @@ const TodoList = ({ todos: propTodos, onAdd, onDelete, onToggle, onEdit }: TodoL
 
   
   useEffect(() => {
-    if (propTodos && propTodos.length > 0) return
+    if (propTodos && propTodos.length > 0) return;
+    const cancel=new AbortController();
     setLoading(true)
-    fetch(`${API_ENDPOINTS.todos}?_limit=${ITEMS_PER_PAGE}`)
+    fetch(`${API_ENDPOINTS.todos}?_limit=${ITEMS_PER_PAGE}`,{signal:cancel.signal})
       .then((r) => r.json())
-      .then((data) => setTodos(data))
-      .catch(() => { })
-      .finally(() => setLoading(false))
+      .then((data) => {
+      if (!cancel.signal.aborted) setTodos(data);
+    })
+    .catch((err) => {
+      if (err.name !== 'AbortError') {
+        console.error(err);
+      }
+    })
+    .finally(() => {
+      if (!cancel.signal.aborted) setLoading(false);
+    });
+
+  return () => cancel.abort();
   }, [])
 
   useEffect(() => {
