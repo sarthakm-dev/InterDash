@@ -533,7 +533,7 @@ function App() {
                     />
                     <Route
                       path="/gallery"
-                      element={<ImageGallery theme={theme} counter={counter} />}
+                      element={<ImageGallery  photos={photos} theme={theme} counter={counter} />}
                     />
                     <Route
                       path="/editor"
