@@ -50,24 +50,24 @@ const Header = ({
 
 
   useEffect(() => {
-      if (!debouncedQuery) return;
-    
-      const controller = new AbortController(); 
-    
-      fetch(`https://jsonplaceholder.typicode.com/posts?q=${debouncedQuery}`, {
-        signal: controller.signal, 
+    if (!debouncedQuery) return;
+
+    const controller = new AbortController();
+
+    fetch(`https://jsonplaceholder.typicode.com/posts?q=${debouncedQuery}`, {
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setSearchResults(data);
+        setShowDropdown(true);
       })
-        .then((res) => res.json())
-        .then((data) => {
-          setSearchResults(data);
-          setShowDropdown(true);
-        })
-        .catch((err) => {
-          if (err.name !== 'AbortError') console.error(err);
-        });
-    
-      return () => controller.abort(); 
-    }, [debouncedQuery]);
+      .catch((err) => {
+        if (err.name !== 'AbortError') console.error(err);
+      });
+
+    return () => controller.abort();
+  }, [debouncedQuery]);
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -103,7 +103,7 @@ const Header = ({
 
   useEffect(() => {
     if (searchResults.length > 0) {
-      const MAX_HISTORY = 50; 
+      const MAX_HISTORY = 50;
       const existing = JSON.parse(localStorage.getItem('searchCache') || '[]');
       existing.push({ query: globalSearchQuery, results: searchResults, time: Date.now() });
       localStorage.setItem('searchCache', JSON.stringify(existing.slice(-MAX_HISTORY)));
@@ -129,7 +129,7 @@ const Header = ({
             type="text"
             value={globalSearchQuery}
             onChange={(e) => setGlobalSearchQuery(e.target.value)}
-             role="combobox"
+            role="combobox"
             aria-expanded={showDropdown}
             aria-controls="search-listbox"
             aria-autocomplete="list"
@@ -147,26 +147,41 @@ const Header = ({
           />
         </div>
         {showDropdown && searchResults.length > 0 && (
-          <div id="search-listbox" role="listbox" className="absolute top-full left-0 right-0 bg-white border border-gray-200 max-h-[200px] overflow-auto z-100 rounded-md shadow-lg">
+          <div
+            id="search-listbox"
+            role="listbox"
+            className={`absolute top-full left-0 right-0 max-h-[200px] overflow-auto z-100 rounded-md shadow-lg border ${theme === 'dark'
+              ? 'bg-gray-800 border-gray-700'
+              : 'bg-white border-gray-200'
+              }`}
+          >
             {searchResults.map((result: HeaderSearchResult, idx: number) => (
               <button
                 key={idx}
                 role='option'
                 tabIndex={0}
-                onKeyDown={(e) => { 
-                  if (e.key === 'Enter') {
-                    setShowDropdown(false);
-                  }
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor =
+                    theme === 'dark' ? '#374151' : '#f9fafb';
                 }}
-                className="p-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 text-sm"
-                onClick={() => {
-                  setShowDropdown(false);
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') setShowDropdown(false);
+                }}
+                style={{
+                  borderBottom: `1px solid ${theme === 'dark' ? '#374151' : '#f3f4f6'}`,
+                  color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
+                }}
+                className="p-2 cursor-pointer text-sm w-full text-left"
+                onClick={() => setShowDropdown(false)}
                 aria-label={`Search result ${result.title}`}
               >
                 {result.title}
               </button>
             ))}
+
           </div>
         )}
       </div>
@@ -176,13 +191,13 @@ const Header = ({
           {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
         <div className="relative" ref={notificationsRef}>
-          <button 
-          className="cursor-pointer" 
-          onClick={() => setShowNotifPanel(!showNotifPanel)} 
+          <button
+            className="cursor-pointer"
+            onClick={() => setShowNotifPanel(!showNotifPanel)}
             aria-haspopup="true"
             aria-expanded={showNotifPanel}
             aria-label='Open notifications'
-            >
+          >
             <Bell className="h-5 w-5" />
             <Badge
               className="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center text-[10px] p-0"
@@ -207,9 +222,9 @@ const Header = ({
               {notifications.map((notif, i: number) => (
                 <button
                   key={i}
-                  className={`cursor-pointer p-2 text-xs border-b ${theme === 'dark'
-                    ? 'border-gray-700 hover:bg-gray-700/60'
-                    : 'border-gray-100 hover:bg-gray-50'
+                  className={`p-2 cursor-pointer text-sm border-b w-full text-left ${theme === 'dark'
+                    ? 'border-gray-700 text-gray-100 hover:bg-gray-700'
+                    : 'border-gray-100 text-gray-800 hover:bg-gray-50'
                     }`}
                 >
                   <div>{notif.body?.slice(0, 80)}</div>
@@ -239,9 +254,9 @@ const Header = ({
             ⚙ Settings
           </button>
           {showSettingsMenu && (
-            <div 
-            role='menu'
-            className="absolute top-full right-0 mt-1 w-[180px] rounded-md shadow-lg border z-50 bg-popover">
+            <div
+              role='menu'
+              className="absolute top-full right-0 mt-1 w-[180px] rounded-md shadow-lg border z-50 bg-popover">
               {[
                 { label: 'Account', status: 'Active' },
                 { label: 'Preferences', status: 'Default' },
