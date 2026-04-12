@@ -211,7 +211,7 @@ function App() {
 
   useEffect(() => {
     fetchNotifications({ userId: user?.id, theme: theme });
-  }, [{ userId: user?.id, theme: theme }]);
+  }, [ user?.id, theme ]);
 
   useEffect(() => {
     const state = {
@@ -227,7 +227,7 @@ function App() {
     localStorage.setItem('appState', JSON.stringify(state));
     sessionStorage.setItem('appState', JSON.stringify(state));
     console.log('Persisted state to localStorage, size:', JSON.stringify(state).length, 'bytes');
-  }, [counter]);
+  }, []);
 
   useEffect(() => {
     try {
