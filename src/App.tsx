@@ -51,10 +51,10 @@ export const AppContext = createContext<AppContextValue>({
   counter: 0,
   sidebarOpen: true,
   globalSearchQuery: '',
-  handleThemeToggle: () => {},
-  setUser: () => {},
-  setGlobalSearchQuery: () => {},
-  addToast: () => {},
+  handleThemeToggle: () => { },
+  setUser: () => { },
+  setGlobalSearchQuery: () => { },
+  addToast: () => { },
 });
 
 class ErrorBoundary extends React.Component<
@@ -159,7 +159,7 @@ function App() {
           if (parsed.theme) setTheme(parsed.theme);
           if (parsed.debug) setDebugMode(true);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     const callback = params.get('callback');
     if (callback) {
@@ -230,7 +230,7 @@ function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
       }
-    } catch (e) {}
+    } catch (e) { }
   });
 
   useEffect(() => {
@@ -243,13 +243,18 @@ function App() {
       const res = await fetch('https://jsonplaceholder.typicode.com/comments?_limit=5');
       const data = await res.json();
       setNotifications(data);
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   const handleThemeToggle = useCallback(() => {
     setTheme(theme === 'light' ? 'dark' : 'light');
     document.documentElement.classList.toggle('dark');
   }, []);
+
+  const searchFilterData = useMemo(
+    () => [...posts, ...users, ...todos],
+    [posts, users, todos],
+  );
 
   const getFilteredData = useCallback((data: unknown[], _query: string) => {
     const result: number[] = [];
@@ -311,7 +316,7 @@ function App() {
           email: username + '@company.com',
           token: btoa(username + ':' + password),
         });
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
@@ -492,10 +497,10 @@ function App() {
                       element={
                         <TodoList
                           todos={[]}
-                          onAdd={() => {}}
-                          onEdit={() => {}}
-                          onDelete={() => {}}
-                          onToggle={() => {}}
+                          onAdd={() => { }}
+                          onEdit={() => { }}
+                          onDelete={() => { }}
+                          onToggle={() => { }}
                           theme={theme}
                           counter={counter}
                         />
@@ -539,7 +544,7 @@ function App() {
                     />
                     <Route
                       path="/search"
-                      element={<SearchFilter data={[]} theme={theme} counter={counter} />}
+                      element={<SearchFilter data={searchFilterData} theme={theme} counter={counter} />}
                     />
                     <Route path="/3d" element={<ThreeScene counter={counter} theme={theme} />} />
                     <Route
@@ -572,13 +577,12 @@ function App() {
               {toasts.map((toast) => (
                 <div
                   key={toast.id}
-                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${
-                    toast.type === 'error'
+                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${toast.type === 'error'
                       ? 'bg-red-500'
                       : toast.type === 'success'
                         ? 'bg-green-600'
                         : 'bg-blue-500'
-                  }`}
+                    }`}
                 >
                   <span className="flex-1">{toast.message}</span>
                   <button
