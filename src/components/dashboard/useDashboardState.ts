@@ -65,9 +65,7 @@ export const useDashboardState = ({
     setSelectedItems((currentItems) => [...currentItems.slice(-50), item]);
   }, []);
 
-  // Stable across renders as long as posts/filterText/sortOrder don't change.
-  // Callers (e.g. DashboardOverviewTab) should wrap the call in useMemo keyed
-  // on this function reference to avoid redundant recomputations.
+  
   const getSortedAndFilteredPosts = useCallback(() => {
     let filteredPosts = posts;
 
@@ -101,8 +99,7 @@ export const useDashboardState = ({
     }));
   }, []);
 
-  // Keep a ref to formData so validateForm/handleProfileSave can read the
-  // latest value without being re-created every time formData changes.
+  
   const formDataRef = useRef(formData);
   useEffect(() => {
     formDataRef.current = formData;
@@ -126,7 +123,7 @@ export const useDashboardState = ({
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  }, []); // stable: reads via ref, writes only to setValidationErrors (stable setter)
+  }, []); 
 
   const handleProfileSave = useCallback(() => {
     const isValid = validateForm();

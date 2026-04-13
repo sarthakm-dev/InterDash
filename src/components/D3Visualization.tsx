@@ -23,9 +23,6 @@ const D3Visualization = React.memo(({ data, theme }: D3VisualizationProps) => {
   const svgRef = useRef<SVGSVGElement>(null)
   const [dimensions] = useState({ width: 600, height: 300 })
 
-  // Stable graph structure: deterministic source/target indices, no Math.random().
-  // Previously Math.random() inside the useEffect meant every counter tick
-  // produced a completely different graph layout.
   const graph = useMemo(() => {
     const nodes = data.slice(0, 50).map((d: any, i: number) => ({
       id: d.id || i,
@@ -41,8 +38,6 @@ const D3Visualization = React.memo(({ data, theme }: D3VisualizationProps) => {
     return { nodes, links }
   }, [data])
 
-  // Effect now depends on the stable `graph` object from useMemo, not on `data`
-  // or `counter` directly — so D3 only re-simulates when the graph data changes.
   useEffect(() => {
     if (!svgRef.current || graph.nodes.length === 0) return
 
