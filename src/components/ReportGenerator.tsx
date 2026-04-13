@@ -18,7 +18,7 @@ const ReportGeneratorComponent = ({ posts, users,  theme }: ReportGeneratorProps
   const [encryptedData, setEncryptedData] = useState('');
 
   useEffect(() => {
-    const data = Array.from({ length: 10000 }, () => ({
+    const data = Array.from({ length: 1000 }, () => ({
       id: faker.string.uuid(),
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
@@ -45,7 +45,7 @@ const ReportGeneratorComponent = ({ posts, users,  theme }: ReportGeneratorProps
     setEncryptedData(encrypted);
   }, []);
 
-  // ✅ Memoized handlers (NO inline functions)
+  
 
   const generatePDF = useCallback(async () => {
     setGenerating(true);
