@@ -45,7 +45,7 @@ const ReportGeneratorComponent = ({ posts, users,  theme }: ReportGeneratorProps
     setEncryptedData(encrypted);
   }, []);
 
-  // ✅ Memoized handlers (NO inline functions)
+  
 
   const generatePDF = useCallback(async () => {
     setGenerating(true);
