@@ -53,13 +53,13 @@ export const AppContext = createContext<AppContextValue>({
   counter: 0,
   sidebarOpen: true,
   globalSearchQuery: '',
-  handleThemeToggle: () => { },
-  setUser: () => { },
-  setGlobalSearchQuery: () => { },
-  addToast: () => { },
+  handleThemeToggle: () => {},
+  setUser: () => {},
+  setGlobalSearchQuery: () => {},
+  addToast: () => {},
 });
 
- const MAX_ERRORS = 20;
+const MAX_ERRORS = 20;
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; errorLog: ErrorLogEntry[] }
@@ -74,8 +74,9 @@ class ErrorBoundary extends React.Component<
   componentDidCatch(error: Error) {
     this.setState((prev) => ({
       ...prev,
-      errorLog: [...prev.errorLog, { error: error.toString(), time: Date.now() }]
-      .slice(-MAX_ERRORS),
+      errorLog: [...prev.errorLog, { error: error.toString(), time: Date.now() }].slice(
+        -MAX_ERRORS,
+      ),
     }));
   }
   render() {
@@ -112,7 +113,7 @@ function App() {
   const [photos, setPhotos] = useState<Photo[]>([]);
 
   const MAX_TOASTS = 5;
-  const MAX_HISTORY = 50
+  const MAX_HISTORY = 50;
   const [toasts, setToasts] = useState<Toast[]>([]);
   const _toastCounter = useRef(0);
 
@@ -127,14 +128,26 @@ function App() {
     }, 3000);
   }, []);
   useEffect(() => {
-    const cancel=new AbortController();
+    const cancel = new AbortController();
     Promise.all([
-      fetch('https://jsonplaceholder.typicode.com/posts',{signal:cancel.signal}).then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/users',{signal:cancel.signal}).then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/todos',{signal:cancel.signal}).then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/comments',{signal:cancel.signal}).then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/albums',{signal:cancel.signal}).then((r) => r.json()),
-      fetch('https://jsonplaceholder.typicode.com/photos?_limit=50',{signal:cancel.signal}).then((r) => r.json()),
+      fetch('https://jsonplaceholder.typicode.com/posts', { signal: cancel.signal }).then((r) =>
+        r.json(),
+      ),
+      fetch('https://jsonplaceholder.typicode.com/users', { signal: cancel.signal }).then((r) =>
+        r.json(),
+      ),
+      fetch('https://jsonplaceholder.typicode.com/todos', { signal: cancel.signal }).then((r) =>
+        r.json(),
+      ),
+      fetch('https://jsonplaceholder.typicode.com/comments', { signal: cancel.signal }).then((r) =>
+        r.json(),
+      ),
+      fetch('https://jsonplaceholder.typicode.com/albums', { signal: cancel.signal }).then((r) =>
+        r.json(),
+      ),
+      fetch('https://jsonplaceholder.typicode.com/photos?_limit=5000', {
+        signal: cancel.signal,
+      }).then((r) => r.json()),
     ])
       .then(([p, u, t, c, al, ph]: [Post[], User[], Todo[], Comment[], Album[], Photo[]]) => {
         setPosts(p);
@@ -145,8 +158,8 @@ function App() {
         setPhotos(ph);
       })
       .catch((e) => {
-        if(!cancel.signal.aborted){
-          console.error('Failed to fetch app data:', e)
+        if (!cancel.signal.aborted) {
+          console.error('Failed to fetch app data:', e);
         }
       });
   }, []);
@@ -156,20 +169,18 @@ function App() {
     const redirectUrl = params.get('redirect') || params.get('next') || params.get('return_to');
     if (redirectUrl) {
       try {
-        const url = new URL(redirectUrl, window.location.origin)
+        const url = new URL(redirectUrl, window.location.origin);
 
         if (url.origin === window.location.origin) {
-          window.location.href = url.href
+          window.location.href = url.href;
         } else {
-          console.warn('Blocked unsafe redirect:', redirectUrl)
+          console.warn('Blocked unsafe redirect:', redirectUrl);
         }
       } catch {
-        console.warn('Invalid redirect URL:', redirectUrl)
+        console.warn('Invalid redirect URL:', redirectUrl);
       }
     }
-  }, [])
-
-
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -182,8 +193,8 @@ function App() {
           if (parsed.debug) setDebugMode(true);
         }
       } catch (e) {
-        console.error('arbitary execution',e)
-       }
+        console.error('arbitary execution', e);
+      }
     }
   }, []);
 
@@ -246,7 +257,7 @@ function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
       }
-    } catch (e) { }
+    } catch (e) {}
   });
 
   useEffect(() => {
@@ -255,34 +266,29 @@ function App() {
   }, []);
 
   const fetchNotifications = useCallback(async (_params: NotificationFetchParams) => {
-    const cancel=new AbortController()
+    const cancel = new AbortController();
     try {
-      const res = await fetch('https://jsonplaceholder.typicode.com/comments?_limit=5',{signal:cancel.signal});
+      const res = await fetch('https://jsonplaceholder.typicode.com/comments?_limit=5', {
+        signal: cancel.signal,
+      });
       const data = await res.json();
       setNotifications(data);
-    } catch (e) { 
-      if(!cancel.signal.aborted){
-        console.error('Failed to fetch notifications',e)
+    } catch (e) {
+      if (!cancel.signal.aborted) {
+        console.error('Failed to fetch notifications', e);
       }
     }
   }, []);
 
   const handleThemeToggle = useCallback(() => {
-    setTheme((prev)=>{const next=prev === 'light' ? 'dark' : 'light';
-      document.documentElement.classList.toggle('dark',next==='dark');
-      return next
+    setTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', next === 'dark');
+      return next;
     });
-    
   }, []);
 
- 
-
-  const searchFilterData = useMemo(
-    () => [...posts, ...users, ...todos],
-    [posts, users, todos],
-  );
-
- 
+  const searchFilterData = useMemo(() => [...posts, ...users, ...todos], [posts, users, todos]);
 
   const contextValue = useMemo(
     () => ({
@@ -311,20 +317,17 @@ function App() {
     ],
   );
 
-
   const handleLogin = useCallback((username: string, password: string) => {
-
     setUser({
       name: username,
       email: username + '@company.com',
-
     });
   }, []);
 
-  const onEditPropHandler = useCallback((_id: number, _text: string) => { }, []);
-  const onAddPropHandler = useCallback((_text: string) => { }, []);
-  const onDeletePropHandler = useCallback((_id: number) => { }, []);
-  const onTogglePropHandler = useCallback((_id: number) => { }, []);
+  const onEditPropHandler = useCallback((_id: number, _text: string) => {}, []);
+  const onAddPropHandler = useCallback((_text: string) => {}, []);
+  const onDeletePropHandler = useCallback((_id: number) => {}, []);
+  const onTogglePropHandler = useCallback((_id: number) => {}, []);
 
   return (
     <ErrorBoundary>
@@ -333,7 +336,6 @@ function App() {
           <div
             className={`min-h-screen ${theme === 'dark' ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-900'}`}
           >
-
             {/* ISSUE-014 fix: Header is lazy so must be inside Suspense */}
             <Suspense fallback={<PageFallback />}>
               <Header
@@ -477,23 +479,11 @@ function App() {
                         />
                       }
                     />
-                    <Route
-                      path="/crypto"
-                      element={<CryptoTracker theme={theme} />}
-                    />
-                    <Route
-                      path="/weather"
-                      element={<WeatherWidget theme={theme} />}
-                    />
+                    <Route path="/crypto" element={<CryptoTracker theme={theme} />} />
+                    <Route path="/weather" element={<WeatherWidget theme={theme} />} />
                     <Route
                       path="/users"
-                      element={
-                        <UserList
-                          theme={theme}
-
-                          globalSearchQuery={globalSearchQuery}
-                        />
-                      }
+                      element={<UserList theme={theme} globalSearchQuery={globalSearchQuery} />}
                     />
                     <Route path="/posts" element={<PostsFeed theme={theme} />} />
                     <Route
@@ -518,7 +508,6 @@ function App() {
                           todos={todos}
                           comments={comments}
                           theme={theme}
-
                         />
                       }
                     />
@@ -526,10 +515,7 @@ function App() {
                       path="/gallery"
                       element={<ImageGallery photos={photos} theme={theme} />}
                     />
-                    <Route
-                      path="/editor"
-                      element={<MarkdownEditor theme={theme} />}
-                    />
+                    <Route path="/editor" element={<MarkdownEditor theme={theme} />} />
                     <Route
                       path="/analytics"
                       element={
@@ -541,7 +527,6 @@ function App() {
                           albums={albums}
                           photos={photos}
                           theme={theme}
-
                         />
                       }
                     />
@@ -552,18 +537,10 @@ function App() {
                     <Route path="/3d" element={<ThreeScene theme={theme} />} />
                     <Route
                       path="/reports"
-                      element={
-                        <ReportGenerator posts={[]} users={[]} theme={theme} />
-                      }
+                      element={<ReportGenerator posts={[]} users={[]} theme={theme} />}
                     />
-                    <Route
-                      path="/d3"
-                      element={<D3Visualization data={posts} theme={theme} />}
-                    />
-                    <Route
-                      path="/math"
-                      element={<MathPlayground theme={theme} />}
-                    />
+                    <Route path="/d3" element={<D3Visualization data={posts} theme={theme} />} />
+                    <Route path="/math" element={<MathPlayground theme={theme} />} />
                   </Routes>
                 </Suspense>
               </main>
@@ -580,12 +557,13 @@ function App() {
               {toasts.map((toast) => (
                 <div
                   key={toast.id}
-                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${toast.type === 'error'
-                    ? 'bg-red-500'
-                    : toast.type === 'success'
-                      ? 'bg-green-600'
-                      : 'bg-blue-500'
-                    }`}
+                  className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white flex items-center gap-2 ${
+                    toast.type === 'error'
+                      ? 'bg-red-500'
+                      : toast.type === 'success'
+                        ? 'bg-green-600'
+                        : 'bg-blue-500'
+                  }`}
                 >
                   <span className="flex-1">{toast.message}</span>
                   <button
